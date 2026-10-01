@@ -38,7 +38,6 @@ function validarActualizacionReporte(req, res, next) {
     const estadosValidos = [
   "NO_VERIFICADO",
   "EN_INVESTIGACION",
-  "VERIFICADO",
   "RESUELTO"
 ];
     if (estado && !estadosValidos.includes(estado)) {

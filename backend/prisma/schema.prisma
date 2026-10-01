@@ -24,6 +24,7 @@ model Usuario {
   comentarios     Comentario[]
   avatar          String?
   reacciones      Reaccion[]
+  resoluciones    Resolucion[]
 }
 
 enum Rol {
@@ -72,14 +73,13 @@ model Reporte {
 
   imagenes     ImagenReporte[]
   comentarios     Comentario[]
-  resoluciones Resolucion[]
+  resolucion   Resolucion?
   reacciones Reaccion[]
 }
 
 enum EstadoReporte {
   NO_VERIFICADO
   EN_INVESTIGACION
-  VERIFICADO
   RESUELTO
 }
 
@@ -117,12 +117,14 @@ model Vigilante {
 
 model Resolucion {
   idResolucion     Int      @id @default(autoincrement())
-  idReporte        Int
+  idReporte        Int      @unique
+  idUsuario        Int?
   resolucion       String
   cuerpoResolucion String   @db.Text
   fechaHora        DateTime @default(now())
 
   reporte          Reporte  @relation(fields: [idReporte], references: [idReporte], onDelete: Cascade)
+  usuario          Usuario? @relation(fields: [idUsuario], references: [idUsuario], onDelete: SetNull)
 }
 
 model TipoReaccion {

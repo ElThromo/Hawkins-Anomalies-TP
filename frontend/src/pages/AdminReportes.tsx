@@ -18,14 +18,12 @@ interface Reporte {
 const ESTADOS = [
   "NO_VERIFICADO",
   "EN_INVESTIGACION",
-  "VERIFICADO",
   "RESUELTO"
 ];
 
 const ESTADO_LABELS: Record<string, string> = {
   NO_VERIFICADO: "No verificado",
   EN_INVESTIGACION: "En investigación",
-  VERIFICADO: "Verificado",
   RESUELTO: "Resuelto"
 };
 
