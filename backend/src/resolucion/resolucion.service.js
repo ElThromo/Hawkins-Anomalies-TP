@@ -9,8 +9,13 @@ async function obtenerResolucionPorId(id) {
     return await resolucionRepository.obtenerResolucionPorId(id);
 }
 
-async function crearResolucion(datos) {
-    return await resolucionRepository.crearResolucion(datos);
+async function crearResolucion(datos, idUsuario) {
+    return await resolucionRepository.crearResolucion({
+        idReporte: datos.idReporte,
+        resolucion: datos.resolucion,
+        cuerpoResolucion: datos.cuerpoResolucion,
+        idUsuario
+    });
 }
 
 async function actualizarResolucion(id, datos) {

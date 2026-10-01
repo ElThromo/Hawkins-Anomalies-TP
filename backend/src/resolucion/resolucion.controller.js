@@ -65,13 +65,19 @@ async function obtenerResolucionPorId(req, res) {
 async function crearResolucion(req, res) {
     try {
         const resolucion =
-            await resolucionService.crearResolucion(req.body);
+            await resolucionService.crearResolucion(req.body, req.usuario.idUsuario);
 
         res.status(201).json({
             mensaje: "Resolución creada y reporte resuelto",
             resolucion
         });
     } catch (error) {
+        if (error.code === "P2002") {
+            return res.status(409).json({
+                error: "Este reporte ya tiene una resolución. Podés editar la existente."
+            });
+        }
+
         if (error.code === "P2003" || error.code === "P2025") {
             return res.status(404).json({
                 error: "El reporte asociado no existe"

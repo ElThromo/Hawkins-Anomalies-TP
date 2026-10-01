@@ -18,6 +18,8 @@ interface Reporte {
 }
 
 interface Resolucion {
+  idUsuario: number | null;
+  usuario: { idUsuario: number; nombre: string } | null;
   idResolucion: number;
   idReporte: number;
   resolucion: string;
@@ -54,13 +56,14 @@ interface Reaccion {
 const ESTADO_LABELS: Record<string, string> = {
   NO_VERIFICADO: "No verificado",
   EN_INVESTIGACION: "En investigación",
-  VERIFICADO: "Verificado",
   RESUELTO: "Resuelto"
 };
 
 function DetalleReporte() {
   const { id } = useParams();
   const { usuario, token } = useAuth();
+  const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
+  const [zoomImagen, setZoomImagen] = useState(1);
 
 const [resoluciones, setResoluciones] = useState<Resolucion[]>([]);
 const [cargandoResoluciones, setCargandoResoluciones] = useState(true);
@@ -69,6 +72,7 @@ const [errorResoluciones, setErrorResoluciones] = useState("");
 const [tituloResolucion, setTituloResolucion] = useState("");
 const [cuerpoResolucion, setCuerpoResolucion] = useState("");
 const [guardandoResolucion, setGuardandoResolucion] = useState(false);
+const [formularioResolucionAbierto, setFormularioResolucionAbierto] = useState(false);
 
 const [idResolucionEditando, setIdResolucionEditando] =
   useState<number | null>(null);
@@ -98,6 +102,99 @@ const [idComentarioRespondiendo, setIdComentarioRespondiendo] =
 const [textoRespuesta, setTextoRespuesta] = useState("");
 
 const [enviandoRespuesta, setEnviandoRespuesta] = useState(false);
+
+useEffect(() => {
+  if (!imagenAmpliada) return;
+  const visor = document.getElementById("visor-imagen");
+  const area = visor?.querySelector<HTMLElement>(".visor-area");
+  const lienzo = area?.querySelector<HTMLElement>(".visor-lienzo");
+  if (!(visor instanceof HTMLDialogElement) || !area || !lienzo) return;
+
+  if (!visor.open) visor.showModal();
+  const overflowAnterior = document.body.style.overflow;
+  document.body.style.overflow = "hidden";
+  let arrastre: { id: number; x: number; y: number; left: number; top: number } | null = null;
+
+  function ampliar(nuevo: number, x: number, y: number) {
+    if (!area || !lienzo) return;
+    const anterior = Number(area.dataset.zoom || 1);
+    const zoom = Math.max(1, Math.min(3, nuevo));
+    const proporcion = zoom / anterior;
+    const left = (area.scrollLeft + x) * proporcion - x;
+    const top = (area.scrollTop + y) * proporcion - y;
+
+    lienzo.style.width = `${zoom * 100}%`;
+    lienzo.style.height = `${zoom * 100}%`;
+    area.dataset.zoom = String(zoom);
+    setZoomImagen(zoom);
+    area.scrollLeft = zoom === 1 ? 0 : left;
+    area.scrollTop = zoom === 1 ? 0 : top;
+  }
+
+  function rueda(evento: WheelEvent) {
+    if (!area) return;
+    evento.preventDefault();
+    const rect = area.getBoundingClientRect();
+    const zoom = Number(area.dataset.zoom || 1);
+    const delta = evento.deltaY * (evento.deltaMode === 1 ? 16 : evento.deltaMode === 2 ? area.clientHeight : 1);
+    ampliar(zoom * Math.exp(-Math.max(-100, Math.min(100, delta)) * 0.002),
+      evento.clientX - rect.left, evento.clientY - rect.top);
+  }
+
+  function dobleClic(evento: MouseEvent) {
+    if (!area) return;
+    const rect = area.getBoundingClientRect();
+    ampliar(Number(area.dataset.zoom || 1) > 1 ? 1 : 2,
+      evento.clientX - rect.left, evento.clientY - rect.top);
+  }
+
+  function empezar(evento: PointerEvent) {
+    if (!area || evento.button !== 0 || !evento.isPrimary) return;
+    area.focus({ preventScroll: true });
+    if (Number(area.dataset.zoom || 1) <= 1) return;
+    evento.preventDefault();
+    arrastre = { id: evento.pointerId, x: evento.clientX, y: evento.clientY,
+      left: area.scrollLeft, top: area.scrollTop };
+    area.setPointerCapture(evento.pointerId);
+    area.dataset.arrastrando = "true";
+  }
+
+  function mover(evento: PointerEvent) {
+    if (!area || !arrastre || evento.pointerId !== arrastre.id) return;
+    area.scrollLeft = arrastre.left - (evento.clientX - arrastre.x);
+    area.scrollTop = arrastre.top - (evento.clientY - arrastre.y);
+  }
+
+  function terminar(evento: PointerEvent) {
+    if (!area || !arrastre || evento.pointerId !== arrastre.id) return;
+    arrastre = null;
+    delete area.dataset.arrastrando;
+    if (area.hasPointerCapture(evento.pointerId)) area.releasePointerCapture(evento.pointerId);
+  }
+
+  area.addEventListener("wheel", rueda, { passive: false });
+  area.addEventListener("dblclick", dobleClic);
+  area.addEventListener("pointerdown", empezar);
+  area.addEventListener("pointermove", mover);
+  area.addEventListener("pointerup", terminar);
+  area.addEventListener("pointercancel", terminar);
+  area.addEventListener("lostpointercapture", terminar);
+
+  return () => {
+    document.body.style.overflow = overflowAnterior;
+    area.removeEventListener("wheel", rueda);
+    area.removeEventListener("dblclick", dobleClic);
+    area.removeEventListener("pointerdown", empezar);
+    area.removeEventListener("pointermove", mover);
+    area.removeEventListener("pointerup", terminar);
+    area.removeEventListener("pointercancel", terminar);
+    area.removeEventListener("lostpointercapture", terminar);
+  };
+}, [imagenAmpliada]);
+
+useEffect(() => {
+  if (formularioResolucionAbierto) document.getElementById("titulo-resolucion")?.focus();
+}, [formularioResolucionAbierto]);
 
 useEffect(() => {
   const controlador = new AbortController();
@@ -324,6 +421,7 @@ async function guardarResolucion(e: FormEvent<HTMLFormElement>) {
     setIdResolucionEditando(null);
     setTituloResolucion("");
     setCuerpoResolucion("");
+    setFormularioResolucionAbierto(false);
   } catch (error) {
     console.error(error);
     setErrorResoluciones("No se pudo conectar con el servidor.");
@@ -391,6 +489,7 @@ async function eliminarResolucion(idResolucion: number) {
       setIdResolucionEditando(null);
       setTituloResolucion("");
       setCuerpoResolucion("");
+      setFormularioResolucionAbierto(false);
     }
   } catch (error) {
     console.error(error);
@@ -891,13 +990,155 @@ setErrorComentarios("");
           </span>
         </div>
 
-        <p className="detalle-cuerpo">{reporte.cuerpo}</p>
+<div className="detalle-contenido-reporte">
+  <p className="detalle-cuerpo">{reporte.cuerpo}</p>
+
+{reporte.imagenes.length > 0 && (
+  <div className="detalle-imagenes">
+    {reporte.imagenes.map((img, indice) => (
+      <button
+        key={img.idImagen}
+        type="button"
+        className="imagen-miniatura"
+        aria-label={`Ampliar imagen ${indice + 1} del reporte`}
+        onClick={() => {
+          setZoomImagen(1);
+          setImagenAmpliada(`http://localhost:3000${img.url}`);
+        }}
+      >
+        <img
+          src={`http://localhost:3000${img.url}`}
+          alt={`${reporte.titulo}: imagen ${indice + 1}`}
+          loading="lazy"
+        />
+      </button>
+    ))}
+  </div>
+)}
+
+<section className="detalle-reacciones" aria-label="Reacciones">
+
+  {cargandoReacciones ? (
+    <p className="detalle-mensaje">Cargando reacciones...</p>
+  ) : (
+    <div className="reacciones-lista">
+      {tiposReaccion
+  .filter((tipo) =>
+    reacciones.some(
+      (reaccion) =>
+        reaccion.idUsuario === usuario?.idUsuario &&
+        reaccion.idTipoReaccion === tipo.idTipoReaccion
+    )
+  )
+  .map(({ idTipoReaccion, emoji, nombre }) => {
+        const cantidad = reacciones.filter(
+          (reaccion) => reaccion.idTipoReaccion === idTipoReaccion
+        ).length;
+
+        const seleccionada = reacciones.some(
+          (reaccion) =>
+            reaccion.idTipoReaccion === idTipoReaccion &&
+            reaccion.idUsuario === usuario?.idUsuario
+        );
+
+        return (
+          <button
+            type="button"
+            className={`reaccion-boton ${
+              seleccionada ? "reaccion-seleccionada" : ""
+            }`}
+            key={idTipoReaccion}
+            title={nombre}
+            aria-label={`${nombre}: ${cantidad}`}
+            aria-pressed={seleccionada}
+            disabled={procesandoReaccion}
+            onClick={() => reaccionar(idTipoReaccion)}
+          >
+            <span className="reaccion-emoji">{emoji}</span>
+            <span className="reaccion-cantidad">{cantidad}</span>
+          </button>
+        );
+      })}
+      <button
+  type="button"
+  className="reaccion-boton reaccion-agregar"
+  aria-label="Ver todas las reacciones"
+  aria-expanded={selectorReaccionesAbierto}
+  aria-controls="catalogo-reacciones"
+  onClick={() => setSelectorReaccionesAbierto((abierto) => !abierto)}
+>
+<svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <circle cx="16" cy="16" r="13" stroke="currentColor" strokeWidth="2" />
+    <path d="M8.5 10.5 12 9M20 9l3.5 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <ellipse cx="11.5" cy="15" rx="1.6" ry="2.2" fill="currentColor" />
+    <ellipse cx="20.5" cy="15" rx="1.6" ry="2.2" fill="currentColor" />
+    <ellipse cx="16" cy="23" rx="3" ry="3.8" stroke="currentColor" strokeWidth="2" />
+  </svg>
+</button>
+    </div>
+  )}
+
+{selectorReaccionesAbierto && (
+  <div id="catalogo-reacciones" className="catalogo-reacciones">
+    <p>Elegí una reacción</p>
+
+    <div className="reacciones-lista">
+      {tiposReaccion.map(({ idTipoReaccion, emoji, nombre }) => (
+        <button
+          key={idTipoReaccion}
+          type="button"
+          className="reaccion-boton"
+          title={nombre}
+          aria-label={nombre}
+          aria-pressed={reacciones.some(
+            (reaccion) =>
+              reaccion.idTipoReaccion === idTipoReaccion &&
+              reaccion.idUsuario === usuario?.idUsuario
+          )}
+          disabled={procesandoReaccion}
+          onClick={() => {
+            setSelectorReaccionesAbierto(false);
+            reaccionar(idTipoReaccion);
+          }}
+        >
+          <span className="reaccion-emoji">{emoji}</span>
+        </button>
+      ))}
+    </div>
+
+    {tiposReaccion.length === 0 && (
+      <p>No hay tipos de reacción disponibles.</p>
+    )}
+  </div>
+)}
+
+  {errorReacciones && (
+    <p className="detalle-mensaje detalle-error">{errorReacciones}</p>
+  )}
+</section>
+</div>
 
 
 <section className="detalle-resoluciones">
   <h2>Resoluciones</h2>
 
-{puedeGestionarResoluciones && (
+{puedeGestionarResoluciones &&
+  !cargandoResoluciones &&
+  !errorResoluciones &&
+  resoluciones.length === 0 &&
+  !formularioResolucionAbierto && (
+    <button type="button" onClick={() => {
+      setIdResolucionEditando(null);
+      setTituloResolucion("");
+      setCuerpoResolucion("");
+      setErrorResoluciones("");
+      setFormularioResolucionAbierto(true);
+    }}>
+      Agregar resolución
+    </button>
+  )}
+
+{puedeGestionarResoluciones && formularioResolucionAbierto && (
   <form
     className="resolucion-form"
     onSubmit={guardarResolucion}
@@ -950,8 +1191,7 @@ setErrorComentarios("");
       : "Guardar resolución"}
 </button>
 
-{idResolucionEditando !== null && (
-  <button
+<button
     type="button"
     disabled={guardandoResolucion}
     onClick={() => {
@@ -959,11 +1199,11 @@ setErrorComentarios("");
       setTituloResolucion("");
       setCuerpoResolucion("");
       setErrorResoluciones("");
+      setFormularioResolucionAbierto(false);
     }}
   >
     Cancelar
   </button>
-)}
   </form>
 )}
 
@@ -991,6 +1231,9 @@ setErrorComentarios("");
   <div className="resolucion-header">
     <div className="resolucion-info">
       <h3>{resolucion.resolucion}</h3>
+      <p className="detalle-meta">
+        {resolucion.usuario ? `Resuelto por ${resolucion.usuario.nombre}` : "Autor no registrado"}
+      </p>
 
       <time
         className="detalle-meta"
@@ -1010,7 +1253,7 @@ setErrorComentarios("");
             setTituloResolucion(resolucion.resolucion);
             setCuerpoResolucion(resolucion.cuerpoResolucion);
             setErrorResoluciones("");
-            document.getElementById("titulo-resolucion")?.focus();
+            setFormularioResolucionAbierto(true);
           }}
         >
           Editar
@@ -1037,110 +1280,9 @@ setErrorComentarios("");
   )}
 </section>
 
-        {reporte.imagenes.length > 0 && (
-          <div className="detalle-imagenes">
-            {reporte.imagenes.map((img) => (
-              <img key={img.idImagen} src={`http://localhost:3000${img.url}`} alt={reporte.titulo} />
-            ))}
-          </div>
-        )}
 
 
-        <section className="detalle-reacciones">
-  <h2>Reacciones</h2>
 
-  {cargandoReacciones ? (
-    <p className="detalle-mensaje">Cargando reacciones...</p>
-  ) : (
-    <div className="reacciones-lista">
-      {tiposReaccion
-  .filter((tipo) =>
-    reacciones.some(
-      (reaccion) =>
-        reaccion.idUsuario === usuario?.idUsuario &&
-        reaccion.idTipoReaccion === tipo.idTipoReaccion
-    )
-  )
-  .map(({ idTipoReaccion, emoji, nombre }) => {
-        const cantidad = reacciones.filter(
-          (reaccion) => reaccion.idTipoReaccion === idTipoReaccion
-        ).length;
-
-        const seleccionada = reacciones.some(
-          (reaccion) =>
-            reaccion.idTipoReaccion === idTipoReaccion &&
-            reaccion.idUsuario === usuario?.idUsuario
-        );
-
-        return (
-          <button
-            type="button"
-            className={`reaccion-boton ${
-              seleccionada ? "reaccion-seleccionada" : ""
-            }`}
-            key={idTipoReaccion}
-            title={nombre}
-            aria-label={`${nombre}: ${cantidad}`}
-            aria-pressed={seleccionada}
-            disabled={procesandoReaccion}
-            onClick={() => reaccionar(idTipoReaccion)}
-          >
-            <span className="reaccion-emoji">{emoji}</span>
-            <span className="reaccion-cantidad">{cantidad}</span>
-          </button>
-        );
-      })}
-      <button
-  type="button"
-  className="reaccion-boton reaccion-agregar"
-  aria-label="Ver todas las reacciones"
-  aria-expanded={selectorReaccionesAbierto}
-  aria-controls="catalogo-reacciones"
-  onClick={() => setSelectorReaccionesAbierto((abierto) => !abierto)}
->
-  +
-</button>
-    </div>
-  )}
-
-{selectorReaccionesAbierto && (
-  <div id="catalogo-reacciones" className="catalogo-reacciones">
-    <p>Elegí una reacción</p>
-
-    <div className="reacciones-lista">
-      {tiposReaccion.map(({ idTipoReaccion, emoji, nombre }) => (
-        <button
-          key={idTipoReaccion}
-          type="button"
-          className="reaccion-boton"
-          title={nombre}
-          aria-label={nombre}
-          aria-pressed={reacciones.some(
-            (reaccion) =>
-              reaccion.idTipoReaccion === idTipoReaccion &&
-              reaccion.idUsuario === usuario?.idUsuario
-          )}
-          disabled={procesandoReaccion}
-          onClick={() => {
-            setSelectorReaccionesAbierto(false);
-            reaccionar(idTipoReaccion);
-          }}
-        >
-          <span className="reaccion-emoji">{emoji}</span>
-        </button>
-      ))}
-    </div>
-
-    {tiposReaccion.length === 0 && (
-      <p>No hay tipos de reacción disponibles.</p>
-    )}
-  </div>
-)}
-
-  {errorReacciones && (
-    <p className="detalle-mensaje detalle-error">{errorReacciones}</p>
-  )}
-</section>
        <section className="detalle-comentarios">
         <h2>Comentarios</h2>
         {usuario ? (
@@ -1181,6 +1323,34 @@ setErrorComentarios("");
     .map(renderizarComentario)}
 </section>
       </div>
+{imagenAmpliada && (
+  <dialog
+    id="visor-imagen"
+    className="visor-imagen"
+    aria-label="Imagen ampliada del reporte"
+    onClose={() => setImagenAmpliada(null)}
+    onClick={(e) => {
+      if (e.target === e.currentTarget) e.currentTarget.close();
+    }}
+  >
+    <div className="visor-controles">
+      <button type="button" aria-label="Reducir imagen" disabled={zoomImagen <= 1}
+        onClick={() => setZoomImagen((zoom) => Math.max(1, zoom - 0.5))}>−</button>
+      <span aria-live="polite">{Math.round(zoomImagen * 100)}%</span>
+      <button type="button" aria-label="Ampliar imagen" disabled={zoomImagen >= 3}
+        onClick={() => setZoomImagen((zoom) => Math.min(3, zoom + 0.5))}>+</button>
+      <button type="button" onClick={() => setZoomImagen(1)}>Restablecer</button>
+      <button type="button" autoFocus
+        onClick={(e) => e.currentTarget.closest("dialog")?.close()}>Cerrar</button>
+    </div>
+    <div className="visor-area" data-zoom={zoomImagen} tabIndex={0}>
+      <div className="visor-lienzo"
+        style={{ width: `${zoomImagen * 100}%`, height: `${zoomImagen * 100}%` }}>
+        <img src={imagenAmpliada} alt={reporte.titulo} draggable={false} />
+      </div>
+    </div>
+  </dialog>
+)}
     </Layout>
   );
 }

@@ -1,10 +1,13 @@
 
 const prisma = require("../prisma");
 
+const incluirAutor = { usuario: { select: { idUsuario: true, nombre: true } } };
+
 // OBTENER TODAS LAS RESOLUCIONES
 async function obtenerResoluciones(idReporte) {
     return await prisma.resolucion.findMany({
         where: idReporte === undefined ? {} : { idReporte },
+        include: incluirAutor,
         orderBy: [
             { fechaHora: "desc" },
             { idResolucion: "desc" }
@@ -15,7 +18,8 @@ async function obtenerResoluciones(idReporte) {
 // OBTENER UNA RESOLUCIÓN POR ID
 async function obtenerResolucionPorId(id) {
     return await prisma.resolucion.findUnique({
-        where: { idResolucion: id }
+        where: { idResolucion: id },
+        include: incluirAutor
     });
 }
 
@@ -25,9 +29,11 @@ async function crearResolucion(datos) {
         const resolucion = await tx.resolucion.create({
             data: {
                 idReporte: datos.idReporte,
+                idUsuario: datos.idUsuario,
                 resolucion: datos.resolucion.trim(),
                 cuerpoResolucion: datos.cuerpoResolucion.trim()
-            }
+            },
+            include: incluirAutor
         });
 
         await tx.reporte.update({
@@ -46,7 +52,8 @@ async function actualizarResolucion(id, datos) {
         data: {
             resolucion: datos.resolucion.trim(),
             cuerpoResolucion: datos.cuerpoResolucion.trim()
-        }
+        },
+        include: incluirAutor
     });
 }
 
@@ -61,7 +68,7 @@ async function eliminarResolucion(id) {
             where: {
                 idReporte: eliminada.idReporte,
                 estado: "RESUELTO",
-                resoluciones: { none: {} }
+                resolucion: { is: null }
             },
             data: {
                 estado: "EN_INVESTIGACION"
