@@ -39,6 +39,9 @@ model Zona {
   nombre       String
   descripcion  String
   nivelPeligro NivelPeligro
+  posX         Int?
+  posY         Int?
+  radio        Int?
   reportes     Reporte[]
   vigilantes   Vigilante[]
 }

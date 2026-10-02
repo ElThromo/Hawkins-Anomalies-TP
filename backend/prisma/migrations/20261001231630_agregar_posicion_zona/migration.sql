@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `zona` ADD COLUMN `posX` INTEGER NULL,
+    ADD COLUMN `posY` INTEGER NULL;
