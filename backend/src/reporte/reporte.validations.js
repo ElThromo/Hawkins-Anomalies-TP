@@ -1,53 +1,62 @@
 
+const LIMITES_TEXTO = { titulo: 200, cuerpo: 2500 };
+const ESTADOS_VALIDOS = ["NO_VERIFICADO", "EN_INVESTIGACION", "RESUELTO"];
+
+function validarTextos(datos, parcial) {
+    for (const [campo, limite] of Object.entries(LIMITES_TEXTO)) {
+        if (parcial && !Object.hasOwn(datos, campo)) continue;
+
+        const valor = datos[campo];
+        const nombre = campo === "titulo" ? "El título" : "La descripción";
+        if (typeof valor !== "string") return `${nombre} debe ser texto`;
+        if (!valor.trim()) return `${nombre} no puede quedar ${campo === "titulo" ? "vacío" : "vacía"} ni contener solo espacios`;
+        if (valor.length > limite) return `${nombre} admite hasta ${limite} caracteres`;
+    }
+    return null;
+}
+
+function normalizarTextos(datos) {
+    for (const campo of Object.keys(LIMITES_TEXTO)) {
+        if (Object.hasOwn(datos, campo)) datos[campo] = datos[campo].trim();
+    }
+}
+
+function esObjeto(datos) {
+    return datos !== null && typeof datos === "object" && !Array.isArray(datos);
+}
+
 function validarReporte(req, res, next) {
-    const { titulo, cuerpo, idZona, idCategoria } = req.body;
-
-    if (!titulo || !cuerpo || !idZona || !idCategoria) {
-        return res.status(400).json({
-            error: "Título, cuerpo, zona y categoría son obligatorios"
-        });
+    if (!esObjeto(req.body)) {
+        return res.status(400).json({ error: "Enviá los datos del reporte" });
     }
 
-    if (typeof titulo !== "string" || typeof cuerpo !== "string") {
-        return res.status(400).json({
-            error: "Título y cuerpo deben ser texto"
-        });
+    const error = validarTextos(req.body, false);
+    if (error) return res.status(400).json({ error });
+
+    const { idZona, idCategoria } = req.body;
+    if (!Number.isInteger(idZona) || idZona <= 0 ||
+        !Number.isInteger(idCategoria) || idCategoria <= 0) {
+        return res.status(400).json({ error: "Seleccioná una zona y una categoría válidas" });
     }
 
-    if (!Number.isInteger(idZona) || !Number.isInteger(idCategoria)) {
-        return res.status(400).json({
-            error: "idZona e idCategoria deben ser números enteros"
-        });
-    }
-
+    normalizarTextos(req.body);
     next();
 }
 
-
 function validarActualizacionReporte(req, res, next) {
-    const { titulo, cuerpo, estado } = req.body;
-
-    if (titulo && typeof titulo !== "string") {
-        return res.status(400).json({ error: "El título debe ser texto" });
+    if (!esObjeto(req.body)) {
+        return res.status(400).json({ error: "Enviá los datos del reporte" });
     }
 
-    if (cuerpo && typeof cuerpo !== "string") {
-        return res.status(400).json({ error: "El cuerpo debe ser texto" });
-    }
+    const error = validarTextos(req.body, true);
+    if (error) return res.status(400).json({ error });
 
-    const estadosValidos = [
-  "NO_VERIFICADO",
-  "EN_INVESTIGACION",
-  "RESUELTO"
-];
-    if (estado && !estadosValidos.includes(estado)) {
+    if (Object.hasOwn(req.body, "estado") && !ESTADOS_VALIDOS.includes(req.body.estado)) {
         return res.status(400).json({ error: "Estado no válido" });
     }
 
+    normalizarTextos(req.body);
     next();
 }
 
-module.exports = {
-    validarReporte,
-    validarActualizacionReporte
-};
+module.exports = { validarReporte, validarActualizacionReporte };

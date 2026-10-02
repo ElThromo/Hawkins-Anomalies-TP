@@ -1,3 +1,4 @@
+
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -58,7 +59,7 @@ model Categoria {
 
 model Reporte {
   idReporte    Int           @id @default(autoincrement())
-  titulo       String
+  titulo       String        @db.VarChar(200)
   cuerpo       String        @db.Text
   fechaHora    DateTime      @default(now())
   estado       EstadoReporte @default(NO_VERIFICADO)
