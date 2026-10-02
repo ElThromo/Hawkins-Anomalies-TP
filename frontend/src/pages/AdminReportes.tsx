@@ -189,7 +189,7 @@ function AdminReportes() {
                 <tr key={reporte.idReporte}>
                   <td>{reporte.idReporte}</td>
                   <td>
-                    <Link to={`/reportes/${reporte.idReporte}`} className="tabla-link">
+                    <Link to={`/reporte/${reporte.idReporte}`} className="tabla-link">
                       {reporte.titulo}
                     </Link>
                   </td>
