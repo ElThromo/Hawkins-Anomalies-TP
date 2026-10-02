@@ -238,6 +238,11 @@
 }
 
 .tabla-link {
+    display: block;
+    max-width: 240px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     color: white;
     text-decoration: none;
 }

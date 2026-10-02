@@ -1,5 +1,6 @@
-const reporteService = require("./reporte.service");
 
+const reporteService = require("./reporte.service");
+const { unlink } = require("node:fs/promises");
 async function obtenerReportes(req, res) {
     try {
         const reportes = await reporteService.obtenerReportes();
@@ -73,41 +74,82 @@ async function eliminarReporte(req, res) {
 }
 
 async function subirImagenes(req, res) {
-    try {
-        const idReporte = parseInt(req.params.id);
+    let imagenesGuardadas = false;
 
-        // Confirmá que el reporte exista
-        const reporte = await reporteService.obtenerReportePorId(idReporte);
-        if (!reporte) {
-            return res.status(404).json({ error: "Reporte no encontrado" });
+    try {
+        const idReporte = Number(req.params.id);
+
+        if (!Number.isSafeInteger(idReporte) || idReporte <= 0) {
+            return res.status(400).json({
+                error: "El número del reporte no es válido"
+            });
         }
 
-        // Solo el autor del reporte (o un admin) puede agregarle imágenes
+        const reporte = await reporteService.obtenerReportePorId(idReporte);
+
+        if (!reporte) {
+            return res.status(404).json({
+                error: "Reporte no encontrado"
+            });
+        }
+
         const esAutor = reporte.usuario.idUsuario === req.usuario.idUsuario;
         const esAdmin = req.usuario.rol === "ADMIN";
 
         if (!esAutor && !esAdmin) {
-            return res.status(403).json({ error: "No tenés permiso para modificar este reporte" });
+            return res.status(403).json({
+                error: "No tenés permiso para modificar este reporte"
+            });
         }
 
         if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ error: "No se recibió ninguna imagen" });
+            return res.status(400).json({
+                error: "No se recibió ninguna imagen"
+            });
         }
 
         await reporteService.agregarImagenes(idReporte, req.files);
+        imagenesGuardadas = true;
 
-        const reporteActualizado = await reporteService.obtenerReportePorId(idReporte);
+        const reporteActualizado =
+            await reporteService.obtenerReportePorId(idReporte);
 
-        res.status(201).json({
+        return res.status(201).json({
             mensaje: "Imágenes subidas correctamente",
             reporte: reporteActualizado
         });
     } catch (error) {
+        if (error.code === "LIMITE_IMAGENES") {
+            return res.status(400).json({ error: error.message });
+        }
+
+        if (error.code === "REPORTE_NO_ENCONTRADO") {
+            return res.status(404).json({ error: error.message });
+        }
+
         console.error(error);
-        res.status(500).json({ error: "Error al subir las imágenes" });
+        return res.status(500).json({
+            error: "Error al subir las imágenes"
+        });
+    } finally {
+        if (!imagenesGuardadas) {
+            await Promise.all(
+                (req.files ?? []).map(async (archivo) => {
+                    try {
+                        await unlink(archivo.path);
+                    } catch (error) {
+                        if (error.code !== "ENOENT") {
+                            console.error(
+                                "No se pudo limpiar un archivo rechazado:",
+                                error
+                            );
+                        }
+                    }
+                })
+            );
+        }
     }
 }
-
 
 module.exports = {
     obtenerReportes,

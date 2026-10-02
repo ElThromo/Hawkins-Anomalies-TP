@@ -21,6 +21,7 @@
     font-family: "Elms Sans", sans-serif;
     font-size: 1.6rem;
     margin: 10px 0 8px;
+    overflow-wrap: anywhere;
 }
 
 .detalle-meta {
