@@ -29,7 +29,17 @@ function Login() {
       }
 
       login(datos.usuario, datos.token);
-      navigate("/");
+
+      // Redirección condicional según el rol
+      const rol = (datos.usuario?.rol || datos.usuario?.role || "").toUpperCase();
+
+      if (rol === "ADMIN") {
+        navigate("/admin");
+      } else if (rol === "INVESTIGADOR") {
+        navigate("/investigador");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       console.error(err);
       setError("No se pudo conectar con el servidor");

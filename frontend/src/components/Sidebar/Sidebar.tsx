@@ -1,13 +1,14 @@
-
 import "./Sidebar.css";
 import { Link } from "react-router-dom";
 import { useSidebar } from "../../context/useSidebar";
-
 import { useAuth } from "../../context/useAuth";
 
 function Sidebar() {
   const { usuario } = useAuth();
   const { abierta, cerrarSidebar } = useSidebar();
+
+  const rol = (usuario?.rol || usuario?.role || "").toUpperCase();
+
   function cerrarSidebarSiEsMobile() {
     if (window.innerWidth < 768) {
       cerrarSidebar();
@@ -36,15 +37,25 @@ function Sidebar() {
           </Link>
         </nav>
 
+        {/* Sección inferior con accesos especiales por rol */}
         <div className="sidebar-bottom">
-        {usuario?.rol === "ADMIN" && (
-          <div className="sidebar-admin">
-            <Link to="/admin" onClick={cerrarSidebarSiEsMobile} className="sidebar-admin-link">
-              <span className="nav-icon icon-paneladmin" />
-              Admin panel
-            </Link>
-          </div>
-        )}
+          {rol === "INVESTIGADOR" && (
+            <div className="sidebar-admin">
+              <Link to="/investigador" onClick={cerrarSidebarSiEsMobile} className="sidebar-admin-link">
+                <span className="nav-icon icon-investigador" />
+                Investigador panel
+              </Link>
+            </div>
+          )}
+
+          {rol === "ADMIN" && (
+            <div className="sidebar-admin">
+              <Link to="/admin" onClick={cerrarSidebarSiEsMobile} className="sidebar-admin-link">
+                <span className="nav-icon icon-paneladmin" />
+                Admin panel
+              </Link>
+            </div>
+          )}
         </div>
       </aside>
     </>
