@@ -21,6 +21,14 @@ const NIVELES = [
   { nombre: "CRITICO", color: "#e84b5b" },
 ];
 
+// Orden de gravedad para poder ordenar correctamente (BAJO → CRITICO)
+const ORDEN_NIVEL: Record<string, number> = {
+  BAJO: 1,
+  MEDIO: 2,
+  ALTO: 3,
+  CRITICO: 4,
+};
+
 function colorDelNivel(nivel: string) {
   return NIVELES.find((n) => n.nombre === nivel)?.color ?? "#d1d1d1";
 }
@@ -29,6 +37,8 @@ function Zonas() {
   const { token } = useAuth();
   const [zonas, setZonas] = useState<Zona[]>([]);
   const [busqueda, setBusqueda] = useState("");
+  const [filtroNivel, setFiltroNivel] = useState("TODOS");
+  const [ordenNivel, setOrdenNivel] = useState("SIN_ORDEN");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [zonaEditando, setZonaEditando] = useState<Zona | "nueva" | null>(null);
@@ -79,35 +89,35 @@ function Zonas() {
     };
   }, []);
 
-async function handleGuardar(datos: { nombre: string; descripcion: string; nivelPeligro: string; posX: number; posY: number; radio: number }) {
-  const esNueva = zonaEditando === "nueva";
-  const url = esNueva
-    ? "http://localhost:3000/zonas"
-    : `http://localhost:3000/zonas/${(zonaEditando as Zona).idZona}`;
+  async function handleGuardar(datos: { nombre: string; descripcion: string; nivelPeligro: string; posX: number; posY: number; radio: number }) {
+    const esNueva = zonaEditando === "nueva";
+    const url = esNueva
+      ? "http://localhost:3000/zonas"
+      : `http://localhost:3000/zonas/${(zonaEditando as Zona).idZona}`;
 
-  try {
-    const respuesta = await fetch(url, {
-      method: esNueva ? "POST" : "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(datos)
-    });
+    try {
+      const respuesta = await fetch(url, {
+        method: esNueva ? "POST" : "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+      });
 
-    if (!respuesta.ok) {
-      const err = await respuesta.json();
-      alert(err.error || "Error al guardar la zona");
-      return;
+      if (!respuesta.ok) {
+        const err = await respuesta.json();
+        alert(err.error || "Error al guardar la zona");
+        return;
+      }
+
+      setZonaEditando(null);
+      cargarZonas();
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo conectar con el servidor");
     }
-
-    setZonaEditando(null);
-    cargarZonas();
-  } catch (err) {
-    console.error(err);
-    alert("No se pudo conectar con el servidor");
   }
-}
 
   async function handleEliminar(zona: Zona) {
     const confirmar = window.confirm(`¿Eliminar la zona "${zona.nombre}"? Esta acción no se puede deshacer.`);
@@ -132,9 +142,24 @@ async function handleGuardar(datos: { nombre: string; descripcion: string; nivel
     }
   }
 
-  const zonasFiltradas = zonas.filter((z) =>
-    z.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const zonasFiltradas = zonas
+    .filter((z) => {
+      const coincideBusqueda = z.nombre.toLowerCase().includes(busqueda.toLowerCase());
+      const coincideNivel = filtroNivel === "TODOS" || z.nivelPeligro === filtroNivel;
+      return coincideBusqueda && coincideNivel;
+    })
+    .sort((a, b) => {
+      if (ordenNivel === "SIN_ORDEN") return 0;
+      const nivelA = ORDEN_NIVEL[a.nivelPeligro] ?? 0;
+      const nivelB = ORDEN_NIVEL[b.nivelPeligro] ?? 0;
+      return ordenNivel === "MAYOR" ? nivelB - nivelA : nivelA - nivelB;
+    });
+
+  function limpiarFiltros() {
+    setBusqueda("");
+    setFiltroNivel("TODOS");
+    setOrdenNivel("SIN_ORDEN");
+  }
 
   return (
     <Layout>
@@ -145,13 +170,30 @@ async function handleGuardar(datos: { nombre: string; descripcion: string; nivel
         </button>
       </div>
 
-      <div className="crud-tools">
+      <div className="crud-tools crud-tools-fila">
         <input
           type="text"
           placeholder="Buscar zona..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
+
+        <select value={filtroNivel} onChange={(e) => setFiltroNivel(e.target.value)}>
+          <option value="TODOS">Todos los niveles</option>
+          {NIVELES.map((n) => (
+            <option key={n.nombre} value={n.nombre}>{n.nombre}</option>
+          ))}
+        </select>
+
+        <select value={ordenNivel} onChange={(e) => setOrdenNivel(e.target.value)}>
+          <option value="SIN_ORDEN">Sin ordenar</option>
+          <option value="MAYOR">Mayor peligro primero</option>
+          <option value="MENOR">Menor peligro primero</option>
+        </select>
+
+        <button className="btn-secundario" onClick={limpiarFiltros}>
+          Limpiar filtros
+        </button>
       </div>
 
       {cargando && <p className="admin-mensaje">Cargando...</p>}

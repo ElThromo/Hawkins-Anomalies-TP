@@ -18,6 +18,7 @@ function AdminUsuarios() {
   const { token } = useAuth();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [busqueda, setBusqueda] = useState("");
+  const [filtroRol, setFiltroRol] = useState("TODOS");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
@@ -128,10 +129,22 @@ function AdminUsuarios() {
     }
   }
 
-  const usuariosFiltrados = usuarios.filter((u) =>
-    u.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    u.email.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const usuariosFiltrados = usuarios
+    .filter((u) => {
+      const coincideBusqueda =
+        u.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+        u.email.toLowerCase().includes(busqueda.toLowerCase());
+
+      const coincideRol = filtroRol === "TODOS" || u.rol === filtroRol;
+
+      return coincideBusqueda && coincideRol;
+    })
+    .sort((a, b) => a.rol.localeCompare(b.rol));
+
+  function limpiarFiltros() {
+    setBusqueda("");
+    setFiltroRol("TODOS");
+  }
 
   return (
     <Layout>
@@ -139,13 +152,24 @@ function AdminUsuarios() {
         <h2>Gestión de Usuarios</h2>
       </div>
 
-      <div className="crud-tools">
+      <div className="crud-tools crud-tools-fila">
         <input
           type="text"
           placeholder="Buscar por nombre o email..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
+
+        <select value={filtroRol} onChange={(e) => setFiltroRol(e.target.value)}>
+          <option value="TODOS">Todos los roles</option>
+          {ROLES.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+
+        <button className="btn-secundario" onClick={limpiarFiltros}>
+          Limpiar filtros
+        </button>
       </div>
 
       {cargando && <p className="admin-mensaje">Cargando...</p>}

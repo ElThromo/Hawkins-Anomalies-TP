@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout/Layout";
@@ -32,6 +31,9 @@ function AdminReportes() {
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
+  const [filtroZona, setFiltroZona] = useState("TODAS");
+  const [filtroCategoria, setFiltroCategoria] = useState("TODAS");
+  const [ordenFecha, setOrdenFecha] = useState("RECIENTES");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [reporteEditando, setReporteEditando] = useState<Reporte | null>(null);
@@ -138,11 +140,38 @@ function AdminReportes() {
     }
   }
 
-  const reportesFiltrados = reportes.filter((r) => {
-    const coincideBusqueda = r.titulo.toLowerCase().includes(busqueda.toLowerCase());
-    const coincideEstado = filtroEstado === "TODOS" || r.estado === filtroEstado;
-    return coincideBusqueda && coincideEstado;
-  });
+  // Opciones únicas para los selects (derivadas de los reportes cargados)
+  const zonasUnicas = Array.from(
+    new Set(reportes.map((r) => r.zona.nombre))
+  ).sort();
+
+  const categoriasUnicas = Array.from(
+    new Set(reportes.map((r) => r.categoria.nombre))
+  ).sort();
+
+  const reportesFiltrados = reportes
+    .filter((r) => {
+      const coincideBusqueda = r.titulo.toLowerCase().includes(busqueda.toLowerCase());
+      const coincideEstado = filtroEstado === "TODOS" || r.estado === filtroEstado;
+      const coincideZona = filtroZona === "TODAS" || r.zona.nombre === filtroZona;
+      const coincideCategoria =
+        filtroCategoria === "TODAS" || r.categoria.nombre === filtroCategoria;
+
+      return coincideBusqueda && coincideEstado && coincideZona && coincideCategoria;
+    })
+    .sort((a, b) => {
+      const fechaA = new Date(a.fechaHora).getTime();
+      const fechaB = new Date(b.fechaHora).getTime();
+      return ordenFecha === "RECIENTES" ? fechaB - fechaA : fechaA - fechaB;
+    });
+
+  function limpiarFiltros() {
+    setBusqueda("");
+    setFiltroEstado("TODOS");
+    setFiltroZona("TODAS");
+    setFiltroCategoria("TODAS");
+    setOrdenFecha("RECIENTES");
+  }
 
   return (
     <Layout>
@@ -164,6 +193,29 @@ function AdminReportes() {
             <option key={estado} value={estado}>{ESTADO_LABELS[estado]}</option>
           ))}
         </select>
+
+        <select value={filtroZona} onChange={(e) => setFiltroZona(e.target.value)}>
+          <option value="TODAS">Todas las zonas</option>
+          {zonasUnicas.map((zona) => (
+            <option key={zona} value={zona}>{zona}</option>
+          ))}
+        </select>
+
+        <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+          <option value="TODAS">Todas las categorías</option>
+          {categoriasUnicas.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+
+        <select value={ordenFecha} onChange={(e) => setOrdenFecha(e.target.value)}>
+          <option value="RECIENTES">Más recientes primero</option>
+          <option value="ANTIGUOS">Más antiguos primero</option>
+        </select>
+
+        <button className="btn-secundario" onClick={limpiarFiltros}>
+          Limpiar filtros
+        </button>
       </div>
 
       {cargando && <p className="admin-mensaje">Cargando...</p>}
