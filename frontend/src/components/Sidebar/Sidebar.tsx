@@ -1,3 +1,4 @@
+
 import "./Sidebar.css";
 import { Link } from "react-router-dom";
 import { useSidebar } from "../../context/useSidebar";
@@ -7,7 +8,7 @@ function Sidebar() {
   const { usuario } = useAuth();
   const { abierta, cerrarSidebar } = useSidebar();
 
-  const rol = (usuario?.rol || usuario?.role || "").toUpperCase();
+  const rol = (usuario?.rol || "").toUpperCase();
 
   function cerrarSidebarSiEsMobile() {
     if (window.innerWidth < 768) {

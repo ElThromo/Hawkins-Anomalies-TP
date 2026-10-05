@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout/Layout";
@@ -17,52 +18,100 @@ function InvestigadorPanel() {
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [cargando, setCargando] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<string>("TODOS");
+  const [errorEstado, setErrorEstado] = useState("");
+  const [errorCarga, setErrorCarga] = useState("");
 
   const navigate = useNavigate();
   const API_URL = import.meta.env?.VITE_API_URL || "http://localhost:3000";
 
-  useEffect(() => {
-    cargarReportes();
-  }, []);
+ useEffect(() => {
+  let cancelado = false;
 
   async function cargarReportes() {
     try {
       const token = localStorage.getItem("token");
+
       const res = await fetch(`${API_URL}/reportes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const datos = await res.json();
-      setReportes(Array.isArray(datos) ? datos : []);
-    } catch (err) {
-      console.error("Error al cargar reportes:", err);
-    } finally {
-      setCargando(false);
-    }
-  }
 
-  async function cambiarEstado(idReporte: number, nuevoEstado: EstadoReporte) {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/reportes/${idReporte}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ estado: nuevoEstado })
-      });
+      const datos = await res.json().catch(() => null);
 
-      if (res.ok) {
-        setReportes((prev) =>
-          prev.map((r) => (r.idReporte === idReporte ? { ...r, estado: nuevoEstado } : r))
+      if (!res.ok) {
+        throw new Error(
+          datos?.error || "No se pudieron cargar los reportes."
         );
-      } else {
-        console.error("Error al actualizar estado:", await res.json());
       }
-    } catch (err) {
-      console.error("Error al actualizar estado:", err);
+
+      if (!Array.isArray(datos)) {
+        throw new Error("El servidor devolvió una respuesta inesperada.");
+      }
+
+      if (!cancelado) {
+        setReportes(datos);
+        setErrorCarga("");
+      }
+    } catch (error) {
+      if (!cancelado) {
+        setErrorCarga(
+          error instanceof Error
+            ? error.message
+            : "No se pudo conectar con el servidor."
+        );
+      }
+    } finally {
+      if (!cancelado) setCargando(false);
     }
   }
+
+  cargarReportes();
+
+  return () => {
+    cancelado = true;
+  };
+}, [API_URL]);
+
+  async function cambiarEstado(
+  idReporte: number,
+  nuevoEstado: EstadoReporte
+) {
+  setErrorEstado("");
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}/reportes/${idReporte}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ estado: nuevoEstado })
+    });
+
+    const datos = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(
+        datos?.error || "No se pudo actualizar el estado."
+      );
+    }
+
+    setReportes((anteriores) =>
+      anteriores.map((reporte) =>
+        reporte.idReporte === idReporte
+          ? { ...reporte, estado: nuevoEstado }
+          : reporte
+      )
+    );
+  } catch (error) {
+    setErrorEstado(
+      error instanceof Error
+        ? error.message
+        : "No se pudo conectar con el servidor."
+    );
+  }
+}
 
   const reportesFiltrados = reportes.filter((r) => {
     if (filtroEstado === "TODOS") return true;
@@ -88,7 +137,11 @@ function InvestigadorPanel() {
             Panel de investigador
           </h1>
         </header>
-
+{errorEstado && (
+  <p role="alert" style={{ color: "#ff8080" }}>
+    {errorEstado}
+  </p>
+)}
         {/* Filtros por Estado */}
         <div 
           style={{ 
@@ -133,7 +186,14 @@ function InvestigadorPanel() {
           <div style={{ color: "#94a3b8", padding: "3rem 0", textAlign: "center" }}>
             Cargando reportes del sistema...
           </div>
-        ) : reportesFiltrados.length === 0 ? (
+        ) : errorCarga ? (
+  <div role="alert" style={{ color: "#ff8080", padding: "1rem" }}>
+    <p>{errorCarga}</p>
+    <button type="button" onClick={() => window.location.reload()}>
+      Reintentar
+    </button>
+  </div>
+) : reportesFiltrados.length === 0 ? (
           <div style={{ background: "#0f172a", border: "1px dashed #334155", borderRadius: "12px", padding: "3rem", textAlign: "center", color: "#64748b" }}>
             No se encontraron reportes en esta sección.
           </div>
@@ -248,7 +308,7 @@ function InvestigadorPanel() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            cambiarEstado(rep.idReporte, "RESUELTO");
+                            navigate(`/reporte/${rep.idReporte}`);
                           }}
                           style={{
                             flex: 1,
@@ -303,7 +363,7 @@ function InvestigadorPanel() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            cambiarEstado(rep.idReporte, "NO_VERIFICADO");
+                            navigate(`/reporte/${rep.idReporte}`);
                           }}
                           style={{
                             width: "100%",
@@ -317,7 +377,7 @@ function InvestigadorPanel() {
                             cursor: "pointer"
                           }}
                         >
-                          Volver a No Verificado
+                          Ver resolución
                         </button>
                       </div>
                     )}

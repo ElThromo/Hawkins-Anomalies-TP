@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { MapContainer, ImageOverlay, Circle, Marker, Popup } from "react-leaflet";
 import L, { CRS, type Map as LeafletMap } from "leaflet";
@@ -34,64 +35,93 @@ function crearIconoBadge(cantidad: number) {
     iconAnchor: [11, 11]
   });
 }
-function crearIconoZona(nombre: string) {
+  function crearIconoZona(nombre: string) {
+  const contenedor = document.createElement("div");
+  contenedor.className = "icono-zona-wrapper";
+
+  const etiqueta = document.createElement("span");
+  etiqueta.className = "icono-zona-nombre";
+  etiqueta.textContent = nombre;
+
+  contenedor.appendChild(etiqueta);
+
   return L.divIcon({
     className: "icono-zona-contenido",
-    html: `
-      <div class="icono-zona-wrapper">
-        <span class="icono-zona-nombre">${nombre}</span>
-      </div>
-    `,
+    html: contenedor,
     iconSize: [100, 100],
     iconAnchor: [50, 50]
   });
 }
+
+const bounds: L.LatLngBoundsExpression = [[0, 0], [ALTO_IMAGEN, ANCHO_IMAGEN]];
+
 function Mapa() {
   const [zonas, setZonas] = useState<Zona[]>([]);
   const [conteoReportes, setConteoReportes] = useState<Record<number, number>>({});
   const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState("");
   const mapaRef = useRef<LeafletMap | null>(null);
 
-  useEffect(() => {
+    useEffect(() => {
+    if (mapaRef.current) {
+      mapaRef.current.fitBounds(bounds);
+    }
+  }, [cargando]);
+
+    useEffect(() => {
     let cancelado = false;
 
     async function cargarDatos() {
       try {
+        const apiUrl =
+          import.meta.env.VITE_API_URL || "http://localhost:3000";
+
         const [resZonas, resReportes] = await Promise.all([
-          fetch("http://localhost:3000/zonas"),
-          fetch("http://localhost:3000/reportes")
+          fetch(`${apiUrl}/zonas`),
+          fetch(`${apiUrl}/reportes`)
         ]);
 
-        if (cancelado) return;
+        if (!resZonas.ok || !resReportes.ok) {
+          throw new Error("No se pudieron cargar los datos del mapa.");
+        }
 
         const datosZonas: Zona[] = await resZonas.json();
         const datosReportes: Reporte[] = await resReportes.json();
 
+        if (!Array.isArray(datosZonas) || !Array.isArray(datosReportes)) {
+          throw new Error("El servidor devolvió una respuesta inesperada.");
+        }
+
         const conteo: Record<number, number> = {};
-        datosReportes.forEach((r) => {
-          conteo[r.zona.idZona] = (conteo[r.zona.idZona] || 0) + 1;
+        datosReportes.forEach((reporte) => {
+          const idZona = reporte.zona.idZona;
+          conteo[idZona] = (conteo[idZona] || 0) + 1;
         });
 
-        setZonas(datosZonas);
-        setConteoReportes(conteo);
-      } catch (err) {
-        console.error(err);
+        if (!cancelado) {
+          setZonas(datosZonas);
+          setConteoReportes(conteo);
+          setErrorCarga("");
+        }
+      } catch (error) {
+        if (!cancelado) {
+          setErrorCarga(
+            error instanceof Error
+              ? error.message
+              : "No se pudo conectar con el servidor."
+          );
+        }
       } finally {
         if (!cancelado) setCargando(false);
       }
     }
 
     cargarDatos();
-    return () => { cancelado = true; };
+
+    return () => {
+      cancelado = true;
+    };
   }, []);
-
-  const bounds: L.LatLngBoundsExpression = [[0, 0], [ALTO_IMAGEN, ANCHO_IMAGEN]];
-
-  useEffect(() => {
-    if (mapaRef.current) {
-      mapaRef.current.fitBounds(bounds);
-    }
-  }, [cargando]);
 
   function coordenadasLeaflet(posX: number, posY: number): L.LatLngExpression {
     return [ALTO_IMAGEN - posY, posX];
@@ -105,7 +135,16 @@ function Mapa() {
       </header> 
       {cargando && <p className="admin-mensaje">Cargando mapa...</p>}
 
-      {!cargando && (
+      {!cargando && errorCarga && (
+        <div className="admin-mensaje" role="alert">
+          <p>{errorCarga}</p>
+          <button type="button" onClick={() => window.location.reload()}>
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {!cargando && !errorCarga && (
         <div className="mapa-contenedor">
           <MapContainer
             ref={mapaRef}

@@ -48,16 +48,34 @@ async function crearReporte(req, res) {
 
 async function actualizarReporte(req, res) {
     try {
-        const id = parseInt(req.params.id);
+        const id = Number(req.params.id);
+
+        if (!Number.isSafeInteger(id) || id <= 0) {
+            return res.status(400).json({
+                error: "El número del reporte no es válido"
+            });
+        }
+
         const reporte = await reporteService.actualizarReporte(id, req.body);
 
-        res.json({
+        return res.json({
             mensaje: "Reporte actualizado",
             reporte
         });
     } catch (error) {
+        if (error.code === "REPORTE_NO_ENCONTRADO") {
+            return res.status(404).json({ error: error.message });
+        }
+
+        if (error.code === "ESTADO_INCOMPATIBLE") {
+            return res.status(409).json({ error: error.message });
+        }
+
         console.error(error);
-        res.status(500).json({ error: "Error al actualizar el reporte" });
+
+        return res.status(500).json({
+            error: "Error al actualizar el reporte"
+        });
     }
 }
 
