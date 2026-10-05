@@ -37,16 +37,34 @@ function validarZona(req, res, next) {
     });
   }
 
-  if (posX !== undefined && posX !== null && typeof posX !== "number") {
-    return res.status(400).json({ error: "posX debe ser un número" });
+    if (
+    posX !== undefined &&
+    posX !== null &&
+    (!Number.isInteger(posX) || posX < 0 || posX > 1473)
+  ) {
+    return res.status(400).json({
+      error: "La posición X debe ser un número entero entre 0 y 1473"
+    });
   }
 
-  if (posY !== undefined && posY !== null && typeof posY !== "number") {
-    return res.status(400).json({ error: "posY debe ser un número" });
+  if (
+    posY !== undefined &&
+    posY !== null &&
+    (!Number.isInteger(posY) || posY < 0 || posY > 1075)
+  ) {
+    return res.status(400).json({
+      error: "La posición Y debe ser un número entero entre 0 y 1075"
+    });
   }
 
-  if (radio !== undefined && radio !== null && typeof radio !== "number") {
-    return res.status(400).json({ error: "radio debe ser un número" });
+  if (
+    radio !== undefined &&
+    radio !== null &&
+    (!Number.isInteger(radio) || radio <= 0 || radio > 2147483647)
+  ) {
+    return res.status(400).json({
+      error: "El radio debe ser un número entero positivo dentro del rango permitido"
+    });
   }
 
   next();

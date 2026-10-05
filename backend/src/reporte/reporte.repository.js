@@ -41,10 +41,54 @@ async function crearReporte(datos) {
 
 // ACTUALIZAR UN REPORTE
 async function actualizarReporte(id, datos) {
-    return await prisma.reporte.update({
-        where: { idReporte: id },
-        data: datos,
-        include: incluirRelaciones
+    return await prisma.$transaction(async (tx) => {
+        const reportes = await tx.$queryRaw`
+            SELECT idReporte
+            FROM Reporte
+            WHERE idReporte = ${id}
+            FOR UPDATE
+        `;
+
+        if (reportes.length === 0) {
+            const error = new Error("Reporte no encontrado");
+            error.code = "REPORTE_NO_ENCONTRADO";
+            throw error;
+        }
+
+        if (datos.estado !== undefined) {
+            const resolucion = await tx.resolucion.findUnique({
+                where: { idReporte: id },
+                select: { idResolucion: true }
+            });
+
+            let mensaje = "";
+
+            if (datos.estado === "RESUELTO" && !resolucion) {
+                mensaje = "Primero agregá una resolución desde el detalle del reporte.";
+            } else if (datos.estado !== "RESUELTO" && resolucion) {
+                mensaje = "El reporte tiene una resolución y debe conservar el estado Resuelto.";
+            }
+
+            if (mensaje) {
+                const error = new Error(mensaje);
+                error.code = "ESTADO_INCOMPATIBLE";
+                throw error;
+            }
+        }
+
+        const cambios = {};
+
+        for (const campo of ["titulo", "cuerpo", "estado"]) {
+            if (Object.hasOwn(datos, campo)) {
+                cambios[campo] = datos[campo];
+            }
+        }
+
+        return await tx.reporte.update({
+            where: { idReporte: id },
+            data: cambios,
+            include: incluirRelaciones
+        });
     });
 }
 
