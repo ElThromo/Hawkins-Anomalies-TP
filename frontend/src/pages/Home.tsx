@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout/Layout";
 import "../styles/Home.css";
+import fondoHero from "../assets/homebackground.png"
 
 interface Reporte {
   idReporte: number;
@@ -98,7 +99,9 @@ function Home() {
 
   return (
     <Layout>
-           <header className="inicio-encabezado">
+      <img src={fondoHero} alt="" className="inicio-fondo-glow" />
+      <div className="inicio-contenido">
+      <header className="inicio-encabezado">
         <h1>
           <img
             src="/ha_logo.PNG"
@@ -106,6 +109,10 @@ function Home() {
             className="inicio-logo"
           />
         </h1>
+      </header>
+      <header>
+        <h1>Inicio</h1>
+        <h3>Bienvenido a Hawkins Anomalies</h3>
       </header>
 
       <section className="cards">
@@ -240,6 +247,7 @@ function Home() {
           )}
         </div>
       </section>
+      </div>
     </Layout>
   );
 }
