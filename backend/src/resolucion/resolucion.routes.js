@@ -6,6 +6,10 @@ const { verificarToken } = require("../middlewares/auth.middleware");
 const { verificarRol } = require("../middlewares/rol.middleware");
 
 const router = express.Router();
+router.get(
+  "/top-investigadores",
+  resolucionController.obtenerTopInvestigadores
+);
 
 router.get("/", resolucionController.obtenerResoluciones);
 router.get("/:id", resolucionController.obtenerResolucionPorId);

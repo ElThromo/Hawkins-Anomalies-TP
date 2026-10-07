@@ -90,7 +90,63 @@ async function eliminarResolucion(id) {
     });
 }
 
+async function obtenerTopInvestigadores() {
+    const ranking = await prisma.resolucion.groupBy({
+        by: ["idUsuario"],
+        where: {
+            usuario: {
+                is: {
+                    rol: "INVESTIGADOR",
+                    activo: true
+                }
+            },
+            reporte: {
+                is: { estado: "RESUELTO" }
+            }
+        },
+        _count: { idResolucion: true },
+        orderBy: [
+            { _count: { idResolucion: "desc" } },
+            { idUsuario: "asc" }
+        ],
+        take: 6
+    });
+
+    const ids = ranking
+        .map((fila) => fila.idUsuario)
+        .filter((id) => id !== null);
+
+    if (ids.length === 0) return [];
+
+    const investigadores = await prisma.usuario.findMany({
+        where: {
+            idUsuario: { in: ids },
+            rol: "INVESTIGADOR",
+            activo: true
+        },
+        select: {
+            idUsuario: true,
+            nombre: true,
+            avatar: true
+        }
+    });
+
+    return ranking.flatMap((fila) => {
+        const investigador = investigadores.find(
+            (usuario) => usuario.idUsuario === fila.idUsuario
+        );
+
+        if (!investigador) return [];
+
+        return [{
+            ...investigador,
+            reportesResueltos: fila._count.idResolucion
+        }];
+    });
+}
+
 module.exports = {
+    obtenerTopInvestigadores,
     obtenerResoluciones,
     obtenerResolucionPorId,
     crearResolucion,

@@ -26,7 +26,12 @@ async function eliminarResolucion(id) {
     return await resolucionRepository.eliminarResolucion(id);
 }
 
+async function obtenerTopInvestigadores() {
+    return await resolucionRepository.obtenerTopInvestigadores();
+}
+
 module.exports = {
+    obtenerTopInvestigadores,
     obtenerResoluciones,
     obtenerResolucionPorId,
     crearResolucion,
