@@ -158,7 +158,20 @@ async function eliminarResolucion(req, res) {
     }
 }
 
+async function obtenerTopInvestigadores(req, res) {
+    try {
+        const ranking = await resolucionService.obtenerTopInvestigadores();
+        res.json(ranking);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "No se pudo cargar el ranking de investigadores"
+        });
+    }
+}
+
 module.exports = {
+    obtenerTopInvestigadores,
     obtenerResoluciones,
     obtenerResolucionPorId,
     crearResolucion,
