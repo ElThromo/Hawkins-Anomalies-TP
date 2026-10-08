@@ -5,7 +5,8 @@ const incluirUsuario = {
   usuario: {
     select: {
       idUsuario: true,
-      nombre: true
+      nombre: true,
+      avatar: true
     }
   }
 };

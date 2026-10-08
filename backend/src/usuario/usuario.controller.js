@@ -1,3 +1,4 @@
+
 const usuarioService = require("./usuario.service");
 
 async function obtenerUsuarios(req, res) {
@@ -116,8 +117,21 @@ async function subirAvatar(req, res) {
     }
 }
 
+async function obtenerTopContribuyentes(req, res) {
+    try {
+        const ranking = await usuarioService.obtenerTopContribuyentes();
+        res.json(ranking);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "No se pudo cargar el ranking de contribuyentes"
+        });
+    }
+}
+
 module.exports = {
     obtenerUsuarios,
+    obtenerTopContribuyentes,
     obtenerUsuarioPorId,
     crearUsuario,
     actualizarUsuario,

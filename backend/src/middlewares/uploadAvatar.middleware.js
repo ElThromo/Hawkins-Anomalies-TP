@@ -1,12 +1,19 @@
+
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+
+const carpetaAvatares = path.join(__dirname, "../../uploads/avatars");
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, path.join(__dirname, "../../uploads/avatars"));
+        fs.mkdir(carpetaAvatares, { recursive: true }, (error) => {
+            cb(error, carpetaAvatares);
+        });
     },
     filename: function (req, file, cb) {
-        const nombreUnico = `avatar-${req.usuario.idUsuario}-${Date.now()}${path.extname(file.originalname)}`;
+        const extension = path.extname(file.originalname).toLowerCase();
+        const nombreUnico = `avatar-${req.usuario.idUsuario}-${Date.now()}${extension}`;
         cb(null, nombreUnico);
     }
 });
