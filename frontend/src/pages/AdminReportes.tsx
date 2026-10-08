@@ -177,6 +177,10 @@ function AdminReportes() {
     <Layout>
       <div className="header-section">
         <h2>Gestión de Reportes</h2>
+
+        <Link to="/investigador" className="btn-panel-investigador">
+          Ir al panel de investigador
+        </Link>
       </div>
 
       <div className="crud-tools crud-tools-fila">

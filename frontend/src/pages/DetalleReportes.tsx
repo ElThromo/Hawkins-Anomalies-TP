@@ -1,4 +1,3 @@
-
 import { useState, useEffect, type FormEvent, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import Layout from "../components/Layout/Layout";
@@ -65,26 +64,32 @@ function DetalleReporte() {
   const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
   const [zoomImagen, setZoomImagen] = useState(1);
 
-const [resoluciones, setResoluciones] = useState<Resolucion[]>([]);
-const [cargandoResoluciones, setCargandoResoluciones] = useState(true);
-const [errorResoluciones, setErrorResoluciones] = useState("");
+  const [resoluciones, setResoluciones] = useState<Resolucion[]>([]);
+  const [cargandoResoluciones, setCargandoResoluciones] = useState(true);
+  const [errorResoluciones, setErrorResoluciones] = useState("");
 
-const [tituloResolucion, setTituloResolucion] = useState("");
-const [cuerpoResolucion, setCuerpoResolucion] = useState("");
-const [guardandoResolucion, setGuardandoResolucion] = useState(false);
-const [formularioResolucionAbierto, setFormularioResolucionAbierto] = useState(false);
+  const [tituloResolucion, setTituloResolucion] = useState("");
+  const [cuerpoResolucion, setCuerpoResolucion] = useState("");
+  const [guardandoResolucion, setGuardandoResolucion] = useState(false);
+  const [formularioResolucionAbierto, setFormularioResolucionAbierto] =
+    useState(false);
 
-const [idResolucionEditando, setIdResolucionEditando] =
-  useState<number | null>(null);
+  const [idResolucionEditando, setIdResolucionEditando] = useState<
+    number | null
+  >(null);
 
-const puedeGestionarResoluciones =
-  usuario?.rol === "ADMIN" || usuario?.rol === "INVESTIGADOR";
+  const puedeGestionarResoluciones =
+    usuario?.rol === "ADMIN" || usuario?.rol === "INVESTIGADOR";
+
+  const [guardandoEstado, setGuardandoEstado] = useState(false);
 
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
   const [nuevoComentario, setNuevoComentario] = useState("");
   const [cargandoComentarios, setCargandoComentarios] = useState(true);
   const [errorComentarios, setErrorComentarios] = useState("");
-  const [idComentarioEditando, setIdComentarioEditando] = useState<number | null>(null);
+  const [idComentarioEditando, setIdComentarioEditando] = useState<
+    number | null
+  >(null);
   const [textoEditado, setTextoEditado] = useState("");
   const [reacciones, setReacciones] = useState<Reaccion[]>([]);
   const [tiposReaccion, setTiposReaccion] = useState<TipoReaccion[]>([]);
@@ -95,153 +100,179 @@ const puedeGestionarResoluciones =
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [selectorReaccionesAbierto, setSelectorReaccionesAbierto] =
-  useState(false);
-const [idComentarioRespondiendo, setIdComentarioRespondiendo] =
-  useState<number | null>(null);
+    useState(false);
+  const [idComentarioRespondiendo, setIdComentarioRespondiendo] = useState<
+    number | null
+  >(null);
 
-const [textoRespuesta, setTextoRespuesta] = useState("");
+  const [textoRespuesta, setTextoRespuesta] = useState("");
 
-const [enviandoRespuesta, setEnviandoRespuesta] = useState(false);
+  const [enviandoRespuesta, setEnviandoRespuesta] = useState(false);
 
-useEffect(() => {
-  if (!imagenAmpliada) return;
-  const visor = document.getElementById("visor-imagen");
-  const area = visor?.querySelector<HTMLElement>(".visor-area");
-  const lienzo = area?.querySelector<HTMLElement>(".visor-lienzo");
-  if (!(visor instanceof HTMLDialogElement) || !area || !lienzo) return;
+  useEffect(() => {
+    if (!imagenAmpliada) return;
+    const visor = document.getElementById("visor-imagen");
+    const area = visor?.querySelector<HTMLElement>(".visor-area");
+    const lienzo = area?.querySelector<HTMLElement>(".visor-lienzo");
+    if (!(visor instanceof HTMLDialogElement) || !area || !lienzo) return;
 
-  if (!visor.open) visor.showModal();
-  const overflowAnterior = document.body.style.overflow;
-  document.body.style.overflow = "hidden";
-  let arrastre: { id: number; x: number; y: number; left: number; top: number } | null = null;
+    if (!visor.open) visor.showModal();
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    let arrastre: {
+      id: number;
+      x: number;
+      y: number;
+      left: number;
+      top: number;
+    } | null = null;
 
-  function ampliar(nuevo: number, x: number, y: number) {
-    if (!area || !lienzo) return;
-    const anterior = Number(area.dataset.zoom || 1);
-    const zoom = Math.max(1, Math.min(3, nuevo));
-    const proporcion = zoom / anterior;
-    const left = (area.scrollLeft + x) * proporcion - x;
-    const top = (area.scrollTop + y) * proporcion - y;
+    function ampliar(nuevo: number, x: number, y: number) {
+      if (!area || !lienzo) return;
+      const anterior = Number(area.dataset.zoom || 1);
+      const zoom = Math.max(1, Math.min(3, nuevo));
+      const proporcion = zoom / anterior;
+      const left = (area.scrollLeft + x) * proporcion - x;
+      const top = (area.scrollTop + y) * proporcion - y;
 
-    lienzo.style.width = `${zoom * 100}%`;
-    lienzo.style.height = `${zoom * 100}%`;
-    area.dataset.zoom = String(zoom);
-    setZoomImagen(zoom);
-    area.scrollLeft = zoom === 1 ? 0 : left;
-    area.scrollTop = zoom === 1 ? 0 : top;
-  }
+      lienzo.style.width = `${zoom * 100}%`;
+      lienzo.style.height = `${zoom * 100}%`;
+      area.dataset.zoom = String(zoom);
+      setZoomImagen(zoom);
+      area.scrollLeft = zoom === 1 ? 0 : left;
+      area.scrollTop = zoom === 1 ? 0 : top;
+    }
 
-  function rueda(evento: WheelEvent) {
-    if (!area) return;
-    evento.preventDefault();
-    const rect = area.getBoundingClientRect();
-    const zoom = Number(area.dataset.zoom || 1);
-    const delta = evento.deltaY * (evento.deltaMode === 1 ? 16 : evento.deltaMode === 2 ? area.clientHeight : 1);
-    ampliar(zoom * Math.exp(-Math.max(-100, Math.min(100, delta)) * 0.002),
-      evento.clientX - rect.left, evento.clientY - rect.top);
-  }
-
-  function dobleClic(evento: MouseEvent) {
-    if (!area) return;
-    const rect = area.getBoundingClientRect();
-    ampliar(Number(area.dataset.zoom || 1) > 1 ? 1 : 2,
-      evento.clientX - rect.left, evento.clientY - rect.top);
-  }
-
-  function empezar(evento: PointerEvent) {
-    if (!area || evento.button !== 0 || !evento.isPrimary) return;
-    area.focus({ preventScroll: true });
-    if (Number(area.dataset.zoom || 1) <= 1) return;
-    evento.preventDefault();
-    arrastre = { id: evento.pointerId, x: evento.clientX, y: evento.clientY,
-      left: area.scrollLeft, top: area.scrollTop };
-    area.setPointerCapture(evento.pointerId);
-    area.dataset.arrastrando = "true";
-  }
-
-  function mover(evento: PointerEvent) {
-    if (!area || !arrastre || evento.pointerId !== arrastre.id) return;
-    area.scrollLeft = arrastre.left - (evento.clientX - arrastre.x);
-    area.scrollTop = arrastre.top - (evento.clientY - arrastre.y);
-  }
-
-  function terminar(evento: PointerEvent) {
-    if (!area || !arrastre || evento.pointerId !== arrastre.id) return;
-    arrastre = null;
-    delete area.dataset.arrastrando;
-    if (area.hasPointerCapture(evento.pointerId)) area.releasePointerCapture(evento.pointerId);
-  }
-
-  area.addEventListener("wheel", rueda, { passive: false });
-  area.addEventListener("dblclick", dobleClic);
-  area.addEventListener("pointerdown", empezar);
-  area.addEventListener("pointermove", mover);
-  area.addEventListener("pointerup", terminar);
-  area.addEventListener("pointercancel", terminar);
-  area.addEventListener("lostpointercapture", terminar);
-
-  return () => {
-    document.body.style.overflow = overflowAnterior;
-    area.removeEventListener("wheel", rueda);
-    area.removeEventListener("dblclick", dobleClic);
-    area.removeEventListener("pointerdown", empezar);
-    area.removeEventListener("pointermove", mover);
-    area.removeEventListener("pointerup", terminar);
-    area.removeEventListener("pointercancel", terminar);
-    area.removeEventListener("lostpointercapture", terminar);
-  };
-}, [imagenAmpliada]);
-
-useEffect(() => {
-  if (formularioResolucionAbierto) document.getElementById("titulo-resolucion")?.focus();
-}, [formularioResolucionAbierto]);
-
-useEffect(() => {
-  const controlador = new AbortController();
-
-  async function cargarResoluciones() {
-    setCargandoResoluciones(true);
-    setErrorResoluciones("");
-    setResoluciones([]);
-
-    try {
-      const respuesta = await fetch(
-        `http://localhost:3000/resoluciones?idReporte=${id}`,
-        { signal: controlador.signal }
+    function rueda(evento: WheelEvent) {
+      if (!area) return;
+      evento.preventDefault();
+      const rect = area.getBoundingClientRect();
+      const zoom = Number(area.dataset.zoom || 1);
+      const delta =
+        evento.deltaY *
+        (evento.deltaMode === 1
+          ? 16
+          : evento.deltaMode === 2
+            ? area.clientHeight
+            : 1);
+      ampliar(
+        zoom * Math.exp(-Math.max(-100, Math.min(100, delta)) * 0.002),
+        evento.clientX - rect.left,
+        evento.clientY - rect.top
       );
+    }
 
-      const datos = await respuesta.json();
+    function dobleClic(evento: MouseEvent) {
+      if (!area) return;
+      const rect = area.getBoundingClientRect();
+      ampliar(
+        Number(area.dataset.zoom || 1) > 1 ? 1 : 2,
+        evento.clientX - rect.left,
+        evento.clientY - rect.top
+      );
+    }
 
-      if (!respuesta.ok) {
-        throw new Error(
-          datos.error || "No se pudieron cargar las resoluciones"
+    function empezar(evento: PointerEvent) {
+      if (!area || evento.button !== 0 || !evento.isPrimary) return;
+      area.focus({ preventScroll: true });
+      if (Number(area.dataset.zoom || 1) <= 1) return;
+      evento.preventDefault();
+      arrastre = {
+        id: evento.pointerId,
+        x: evento.clientX,
+        y: evento.clientY,
+        left: area.scrollLeft,
+        top: area.scrollTop
+      };
+      area.setPointerCapture(evento.pointerId);
+      area.dataset.arrastrando = "true";
+    }
+
+    function mover(evento: PointerEvent) {
+      if (!area || !arrastre || evento.pointerId !== arrastre.id) return;
+      area.scrollLeft = arrastre.left - (evento.clientX - arrastre.x);
+      area.scrollTop = arrastre.top - (evento.clientY - arrastre.y);
+    }
+
+    function terminar(evento: PointerEvent) {
+      if (!area || !arrastre || evento.pointerId !== arrastre.id) return;
+      arrastre = null;
+      delete area.dataset.arrastrando;
+      if (area.hasPointerCapture(evento.pointerId))
+        area.releasePointerCapture(evento.pointerId);
+    }
+
+    area.addEventListener("wheel", rueda, { passive: false });
+    area.addEventListener("dblclick", dobleClic);
+    area.addEventListener("pointerdown", empezar);
+    area.addEventListener("pointermove", mover);
+    area.addEventListener("pointerup", terminar);
+    area.addEventListener("pointercancel", terminar);
+    area.addEventListener("lostpointercapture", terminar);
+
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      area.removeEventListener("wheel", rueda);
+      area.removeEventListener("dblclick", dobleClic);
+      area.removeEventListener("pointerdown", empezar);
+      area.removeEventListener("pointermove", mover);
+      area.removeEventListener("pointerup", terminar);
+      area.removeEventListener("pointercancel", terminar);
+      area.removeEventListener("lostpointercapture", terminar);
+    };
+  }, [imagenAmpliada]);
+
+  useEffect(() => {
+    if (formularioResolucionAbierto)
+      document.getElementById("titulo-resolucion")?.focus();
+  }, [formularioResolucionAbierto]);
+
+  useEffect(() => {
+    const controlador = new AbortController();
+
+    async function cargarResoluciones() {
+      setCargandoResoluciones(true);
+      setErrorResoluciones("");
+      setResoluciones([]);
+
+      try {
+        const respuesta = await fetch(
+          `http://localhost:3000/resoluciones?idReporte=${id}`,
+          { signal: controlador.signal }
         );
-      }
 
-      if (!controlador.signal.aborted) {
-        setResoluciones(datos);
-      }
-    } catch (error) {
-      if (!controlador.signal.aborted) {
-        setErrorResoluciones(
-          error instanceof Error
-            ? error.message
-            : "No se pudo conectar con el servidor"
-        );
-      }
-    } finally {
-      if (!controlador.signal.aborted) {
-        setCargandoResoluciones(false);
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok) {
+          throw new Error(
+            datos.error || "No se pudieron cargar las resoluciones"
+          );
+        }
+
+        if (!controlador.signal.aborted) {
+          setResoluciones(datos);
+        }
+      } catch (error) {
+        if (!controlador.signal.aborted) {
+          setErrorResoluciones(
+            error instanceof Error
+              ? error.message
+              : "No se pudo conectar con el servidor"
+          );
+        }
+      } finally {
+        if (!controlador.signal.aborted) {
+          setCargandoResoluciones(false);
+        }
       }
     }
-  }
 
-  if (id) {
-    cargarResoluciones();
-  }
+    if (id) {
+      cargarResoluciones();
+    }
 
-  return () => controlador.abort();
-}, [id]);
+    return () => controlador.abort();
+  }, [id]);
 
   useEffect(() => {
     async function cargarReporte() {
@@ -280,7 +311,9 @@ useEffect(() => {
         const datos = await respuesta.json();
 
         if (!respuesta.ok) {
-          setErrorComentarios(datos.error || "No se pudieron cargar los comentarios");
+          setErrorComentarios(
+            datos.error || "No se pudieron cargar los comentarios"
+          );
           return;
         }
 
@@ -298,225 +331,203 @@ useEffect(() => {
     }
   }, [id]);
 
-useEffect(() => {
-  async function cargarReacciones() {
-    setCargandoReacciones(true);
-    setErrorReacciones("");
+  useEffect(() => {
+    async function cargarReacciones() {
+      setCargandoReacciones(true);
+      setErrorReacciones("");
+
+      try {
+        const respuesta = await fetch(
+          `http://localhost:3000/reacciones?idReporte=${id}`
+        );
+
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok) {
+          setErrorReacciones(
+            datos.error || "No se pudieron cargar las reacciones"
+          );
+          return;
+        }
+
+        const respuestaTipos = await fetch(
+          "http://localhost:3000/tipos-reaccion"
+        );
+
+        const datosTipos = await respuestaTipos.json();
+
+        if (!respuestaTipos.ok) {
+          setErrorReacciones(
+            datosTipos.error || "No se pudieron cargar los tipos de reacción"
+          );
+          return;
+        }
+
+        setTiposReaccion(datosTipos);
+        setReacciones(datos);
+      } catch (err) {
+        console.error(err);
+        setErrorReacciones("No se pudo conectar con el servidor");
+      } finally {
+        setCargandoReacciones(false);
+      }
+    }
+
+    if (id) {
+      cargarReacciones();
+    }
+  }, [id]);
+
+  async function cambiarEstadoReporte(nuevoEstado: string) {
+    if (!token || !puedeGestionarResoluciones || !reporte) return;
+    if (guardandoEstado) return;
+
+    setGuardandoEstado(true);
+    setErrorResoluciones("");
 
     try {
       const respuesta = await fetch(
-        `http://localhost:3000/reacciones?idReporte=${id}`
+        `http://localhost:3000/reportes/${reporte.idReporte}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ estado: nuevoEstado })
+        }
       );
 
       const datos = await respuesta.json();
 
       if (!respuesta.ok) {
-        setErrorReacciones(
-          datos.error || "No se pudieron cargar las reacciones"
+        setErrorResoluciones(
+          datos.error || "No se pudo actualizar el estado."
         );
         return;
       }
-const respuestaTipos = await fetch(
-  "http://localhost:3000/tipos-reaccion"
-);
 
-const datosTipos = await respuestaTipos.json();
-
-if (!respuestaTipos.ok) {
-  setErrorReacciones(
-    datosTipos.error || "No se pudieron cargar los tipos de reacción"
-  );
-  return;
-}
-
-setTiposReaccion(datosTipos);
-      setReacciones(datos);
+      setReporte((actual) =>
+        actual ? { ...actual, estado: nuevoEstado } : actual
+      );
     } catch (err) {
       console.error(err);
-      setErrorReacciones("No se pudo conectar con el servidor");
+      setErrorResoluciones("No se pudo conectar con el servidor.");
     } finally {
-      setCargandoReacciones(false);
+      setGuardandoEstado(false);
     }
   }
 
-  if (id) {
-    cargarReacciones();
-  }
-}, [id]);
+  async function guardarResolucion(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
 
-async function guardarResolucion(e: FormEvent<HTMLFormElement>) {
-  e.preventDefault();
+    if (guardandoResolucion || cargandoResoluciones) return;
 
-  if (guardandoResolucion || cargandoResoluciones) return;
+    setErrorResoluciones("");
 
-  setErrorResoluciones("");
-
-  if (!token || !puedeGestionarResoluciones) {
-    setErrorResoluciones(
-      "Solo administradores e investigadores pueden gestionar resoluciones."
-    );
-    return;
-  }
-
-  if (!reporte) return;
-
-  const titulo = tituloResolucion.trim();
-  const cuerpo = cuerpoResolucion.trim();
-
-  if (!titulo || !cuerpo) {
-    setErrorResoluciones("Completá el título y la descripción.");
-    return;
-  }
-
-  const editando = idResolucionEditando !== null;
-  const url = editando
-    ? `http://localhost:3000/resoluciones/${idResolucionEditando}`
-    : "http://localhost:3000/resoluciones";
-
-  setGuardandoResolucion(true);
-
-  try {
-    const respuesta = await fetch(url, {
-      method: editando ? "PUT" : "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        idReporte: reporte.idReporte,
-        resolucion: titulo,
-        cuerpoResolucion: cuerpo
-      })
-    });
-
-    const datos = await respuesta.json();
-
-    if (!respuesta.ok) {
+    if (!token || !puedeGestionarResoluciones) {
       setErrorResoluciones(
-        datos.error || "No se pudo guardar la resolución."
+        "Solo administradores e investigadores pueden gestionar resoluciones."
       );
       return;
     }
 
-    const guardada: Resolucion = datos.resolucion;
+    if (!reporte) return;
 
-    setResoluciones((anteriores) =>
-      editando
-        ? anteriores.map((resolucion) =>
-            resolucion.idResolucion === guardada.idResolucion
-              ? guardada
-              : resolucion
-          )
-        : [guardada, ...anteriores]
-    );
+    const titulo = tituloResolucion.trim();
+    const cuerpo = cuerpoResolucion.trim();
 
-    if (!editando) {
-      setReporte((actual) =>
-        actual?.idReporte === reporte.idReporte
-          ? { ...actual, estado: "RESUELTO" }
-          : actual
-      );
+    if (!titulo || !cuerpo) {
+      setErrorResoluciones("Completá el título y la descripción.");
+      return;
     }
 
-    setIdResolucionEditando(null);
-    setTituloResolucion("");
-    setCuerpoResolucion("");
-    setFormularioResolucionAbierto(false);
-  } catch (error) {
-    console.error(error);
-    setErrorResoluciones("No se pudo conectar con el servidor.");
-  } finally {
-    setGuardandoResolucion(false);
-  }
-}
+    const editando = idResolucionEditando !== null;
+    const url = editando
+      ? `http://localhost:3000/resoluciones/${idResolucionEditando}`
+      : "http://localhost:3000/resoluciones";
 
-async function eliminarResolucion(idResolucion: number) {
-  if (guardandoResolucion || cargandoResoluciones) return;
+    setGuardandoResolucion(true);
 
-  setErrorResoluciones("");
-
-  if (!token || !puedeGestionarResoluciones) {
-    setErrorResoluciones(
-      "Solo administradores e investigadores pueden eliminar resoluciones."
-    );
-    return;
-  }
-
-  const confirmar = window.confirm(
-    "¿Querés eliminar esta resolución? Esta acción no se puede deshacer. " +
-    "Si es la última y el reporte está Resuelto, volverá a En investigación."
-  );
-
-  if (!confirmar) return;
-
-  setGuardandoResolucion(true);
-
-  try {
-    const respuesta = await fetch(
-      `http://localhost:3000/resoluciones/${idResolucion}`,
-      {
-        method: "DELETE",
+    try {
+      const respuesta = await fetch(url, {
+        method: editando ? "PUT" : "POST",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({
+          idReporte: reporte.idReporte,
+          resolucion: titulo,
+          cuerpoResolucion: cuerpo
+        })
+      });
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        setErrorResoluciones(
+          datos.error || "No se pudo guardar la resolución."
+        );
+        return;
       }
-    );
 
-    const datos = await respuesta.json();
+      const guardada: Resolucion = datos.resolucion;
 
-    if (!respuesta.ok) {
-      setErrorResoluciones(
-        datos.error || "No se pudo eliminar la resolución."
+      setResoluciones((anteriores) =>
+        editando
+          ? anteriores.map((resolucion) =>
+              resolucion.idResolucion === guardada.idResolucion
+                ? guardada
+                : resolucion
+            )
+          : [guardada, ...anteriores]
       );
-      return;
-    }
 
-    setResoluciones((anteriores) =>
-      anteriores.filter(
-        (resolucion) => resolucion.idResolucion !== datos.idResolucion
-      )
-    );
+      if (!editando) {
+        setReporte((actual) =>
+          actual?.idReporte === reporte.idReporte
+            ? { ...actual, estado: "RESUELTO" }
+            : actual
+        );
+      }
 
-    setReporte((actual) => {
-  if (!actual || actual.idReporte !== datos.reporte.idReporte) {
-    return actual;
-  }
-
-  return { ...actual, estado: datos.reporte.estado };
-});
-
-    if (idResolucionEditando === datos.idResolucion) {
       setIdResolucionEditando(null);
       setTituloResolucion("");
       setCuerpoResolucion("");
       setFormularioResolucionAbierto(false);
+    } catch (error) {
+      console.error(error);
+      setErrorResoluciones("No se pudo conectar con el servidor.");
+    } finally {
+      setGuardandoResolucion(false);
     }
-  } catch (error) {
-    console.error(error);
-    setErrorResoluciones("No se pudo conectar con el servidor.");
-  } finally {
-    setGuardandoResolucion(false);
-  }
-}
-
-async function reaccionar(idTipoReaccion: number) {
-  setErrorReacciones("");
-
-  if (!usuario || !token) {
-    setErrorReacciones("Tenés que iniciar sesión para reaccionar");
-    return;
   }
 
-  const reaccionActual = reacciones.find(
-    (reaccion) => reaccion.idUsuario === usuario.idUsuario
-  );
+  async function eliminarResolucion(idResolucion: number) {
+    if (guardandoResolucion || cargandoResoluciones) return;
 
-  setProcesandoReaccion(true);
+    setErrorResoluciones("");
 
-  try {
-    if (reaccionActual?.idTipoReaccion === idTipoReaccion) {
+    if (!token || !puedeGestionarResoluciones) {
+      setErrorResoluciones(
+        "Solo administradores e investigadores pueden eliminar resoluciones."
+      );
+      return;
+    }
+
+    const confirmar = window.confirm(
+      "¿Querés eliminar esta resolución? Esta acción no se puede deshacer. " +
+        "Si es la última y el reporte está Resuelto, volverá a En investigación."
+    );
+
+    if (!confirmar) return;
+
+    setGuardandoResolucion(true);
+
+    try {
       const respuesta = await fetch(
-        `http://localhost:3000/reacciones/${reaccionActual.idReaccion}`,
+        `http://localhost:3000/resoluciones/${idResolucion}`,
         {
           method: "DELETE",
           headers: {
@@ -528,414 +539,488 @@ async function reaccionar(idTipoReaccion: number) {
       const datos = await respuesta.json();
 
       if (!respuesta.ok) {
-        setErrorReacciones(datos.error || "No se pudo eliminar la reacción");
+        setErrorResoluciones(
+          datos.error || "No se pudo eliminar la resolución."
+        );
         return;
       }
 
-      setReacciones((anteriores) =>
+      setResoluciones((anteriores) =>
         anteriores.filter(
-          (reaccion) => reaccion.idReaccion !== reaccionActual.idReaccion
+          (resolucion) => resolucion.idResolucion !== datos.idResolucion
         )
       );
 
+      setReporte((actual) => {
+        if (!actual || actual.idReporte !== datos.reporte.idReporte) {
+          return actual;
+        }
+
+        return { ...actual, estado: datos.reporte.estado };
+      });
+
+      if (idResolucionEditando === datos.idResolucion) {
+        setIdResolucionEditando(null);
+        setTituloResolucion("");
+        setCuerpoResolucion("");
+        setFormularioResolucionAbierto(false);
+      }
+    } catch (error) {
+      console.error(error);
+      setErrorResoluciones("No se pudo conectar con el servidor.");
+    } finally {
+      setGuardandoResolucion(false);
+    }
+  }
+
+  async function reaccionar(idTipoReaccion: number) {
+    setErrorReacciones("");
+
+    if (!usuario || !token) {
+      setErrorReacciones("Tenés que iniciar sesión para reaccionar");
       return;
     }
 
-    if (reaccionActual) {
+    const reaccionActual = reacciones.find(
+      (reaccion) => reaccion.idUsuario === usuario.idUsuario
+    );
+
+    setProcesandoReaccion(true);
+
+    try {
+      if (reaccionActual?.idTipoReaccion === idTipoReaccion) {
+        const respuesta = await fetch(
+          `http://localhost:3000/reacciones/${reaccionActual.idReaccion}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok) {
+          setErrorReacciones(datos.error || "No se pudo eliminar la reacción");
+          return;
+        }
+
+        setReacciones((anteriores) =>
+          anteriores.filter(
+            (reaccion) => reaccion.idReaccion !== reaccionActual.idReaccion
+          )
+        );
+
+        return;
+      }
+
+      if (reaccionActual) {
+        const respuesta = await fetch(
+          `http://localhost:3000/reacciones/${reaccionActual.idReaccion}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ idTipoReaccion })
+          }
+        );
+
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok) {
+          setErrorReacciones(datos.error || "No se pudo cambiar la reacción");
+          return;
+        }
+
+        setReacciones((anteriores) =>
+          anteriores.map((reaccion) =>
+            reaccion.idReaccion === reaccionActual.idReaccion
+              ? datos.reaccion
+              : reaccion
+          )
+        );
+
+        return;
+      }
+
+      const respuesta = await fetch("http://localhost:3000/reacciones", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          idTipoReaccion,
+          idReporte: Number(id)
+        })
+      });
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        setErrorReacciones(datos.error || "No se pudo crear la reacción");
+        return;
+      }
+
+      setReacciones((anteriores) => [datos.reaccion, ...anteriores]);
+    } catch (err) {
+      console.error(err);
+      setErrorReacciones("No se pudo conectar con el servidor");
+    } finally {
+      setProcesandoReaccion(false);
+    }
+  }
+
+  async function enviarRespuesta(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (enviandoRespuesta || idComentarioRespondiendo === null) {
+      return;
+    }
+
+    setErrorComentarios("");
+
+    if (!usuario || !token) {
+      setErrorComentarios("Tenés que iniciar sesión para responder");
+      return;
+    }
+
+    if (!textoRespuesta.trim()) {
+      setErrorComentarios("La respuesta no puede estar vacía");
+      return;
+    }
+
+    setEnviandoRespuesta(true);
+
+    try {
+      const respuesta = await fetch("http://localhost:3000/comentarios", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          texto: textoRespuesta.trim(),
+          idReporte: Number(id),
+          idComentarioPadre: idComentarioRespondiendo
+        })
+      });
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        setErrorComentarios(datos.error || "No se pudo enviar la respuesta");
+        return;
+      }
+
+      setComentarios((anteriores) => [...anteriores, datos.comentario]);
+      setTextoRespuesta("");
+      setIdComentarioRespondiendo(null);
+    } catch (err) {
+      console.error(err);
+      setErrorComentarios("No se pudo conectar con el servidor");
+    } finally {
+      setEnviandoRespuesta(false);
+    }
+  }
+
+  async function crearComentario(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setErrorComentarios("");
+
+    if (!nuevoComentario.trim()) {
+      setErrorComentarios("El comentario no puede estar vacío");
+      return;
+    }
+
+    if (!token) {
+      setErrorComentarios("Tenés que iniciar sesión para comentar");
+      return;
+    }
+
+    try {
+      const respuesta = await fetch("http://localhost:3000/comentarios", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          texto: nuevoComentario,
+          idReporte: Number(id)
+        })
+      });
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        setErrorComentarios(datos.error || "No se pudo crear el comentario");
+        return;
+      }
+
+      setComentarios((anteriores) => [datos.comentario, ...anteriores]);
+      setNuevoComentario("");
+    } catch (err) {
+      console.error(err);
+      setErrorComentarios("No se pudo conectar con el servidor");
+    }
+  }
+
+  function iniciarEdicion(comentario: Comentario) {
+    setIdComentarioEditando(comentario.idComentario);
+    setTextoEditado(comentario.texto);
+    setErrorComentarios("");
+  }
+
+  function cancelarEdicion() {
+    setIdComentarioEditando(null);
+    setTextoEditado("");
+  }
+
+  async function guardarEdicion(idComentario: number) {
+    if (!textoEditado.trim() || !token) {
+      setErrorComentarios("El comentario no puede estar vacío");
+      return;
+    }
+
+    try {
       const respuesta = await fetch(
-        `http://localhost:3000/reacciones/${reaccionActual.idReaccion}`,
+        `http://localhost:3000/comentarios/${idComentario}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ idTipoReaccion })
+          body: JSON.stringify({ texto: textoEditado })
         }
       );
 
       const datos = await respuesta.json();
 
       if (!respuesta.ok) {
-        setErrorReacciones(datos.error || "No se pudo cambiar la reacción");
+        setErrorComentarios(datos.error || "No se pudo editar el comentario");
         return;
       }
 
-      setReacciones((anteriores) =>
-        anteriores.map((reaccion) =>
-          reaccion.idReaccion === reaccionActual.idReaccion
-            ? datos.reaccion
-            : reaccion
+      setComentarios((anteriores) =>
+        anteriores.map((comentario) =>
+          comentario.idComentario === idComentario
+            ? datos.comentario
+            : comentario
         )
       );
 
-      return;
+      cancelarEdicion();
+    } catch (err) {
+      console.error(err);
+      setErrorComentarios("No se pudo conectar con el servidor");
     }
-
-    const respuesta = await fetch("http://localhost:3000/reacciones", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        idTipoReaccion,
-        idReporte: Number(id)
-      })
-    });
-
-    const datos = await respuesta.json();
-
-    if (!respuesta.ok) {
-      setErrorReacciones(datos.error || "No se pudo crear la reacción");
-      return;
-    }
-
-    setReacciones((anteriores) => [datos.reaccion, ...anteriores]);
-  } catch (err) {
-    console.error(err);
-    setErrorReacciones("No se pudo conectar con el servidor");
-  } finally {
-    setProcesandoReaccion(false);
-  }
-}
-
-async function enviarRespuesta(e: FormEvent<HTMLFormElement>) {
-  e.preventDefault();
-
-  if (enviandoRespuesta || idComentarioRespondiendo === null) {
-    return;
   }
 
-  setErrorComentarios("");
+  async function eliminarComentario(idComentario: number) {
+    if (!token) return;
 
-  if (!usuario || !token) {
-    setErrorComentarios("Tenés que iniciar sesión para responder");
-    return;
-  }
-
-  if (!textoRespuesta.trim()) {
-    setErrorComentarios("La respuesta no puede estar vacía");
-    return;
-  }
-
-  setEnviandoRespuesta(true);
-
-  try {
-    const respuesta = await fetch("http://localhost:3000/comentarios", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        texto: textoRespuesta.trim(),
-        idReporte: Number(id),
-        idComentarioPadre: idComentarioRespondiendo
-      })
-    });
-
-    const datos = await respuesta.json();
-
-    if (!respuesta.ok) {
-      setErrorComentarios(datos.error || "No se pudo enviar la respuesta");
-      return;
-    }
-
-    setComentarios((anteriores) => [...anteriores, datos.comentario]);
-    setTextoRespuesta("");
-    setIdComentarioRespondiendo(null);
-  } catch (err) {
-    console.error(err);
-    setErrorComentarios("No se pudo conectar con el servidor");
-  } finally {
-    setEnviandoRespuesta(false);
-  }
-}
-
-async function crearComentario(e: FormEvent<HTMLFormElement>) {
-  e.preventDefault();
-  setErrorComentarios("");
-
-  if (!nuevoComentario.trim()) {
-    setErrorComentarios("El comentario no puede estar vacío");
-    return;
-  }
-
-  if (!token) {
-    setErrorComentarios("Tenés que iniciar sesión para comentar");
-    return;
-  }
-
-  try {
-    const respuesta = await fetch("http://localhost:3000/comentarios", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        texto: nuevoComentario,
-        idReporte: Number(id)
-      })
-    });
-
-    const datos = await respuesta.json();
-
-    if (!respuesta.ok) {
-      setErrorComentarios(datos.error || "No se pudo crear el comentario");
-      return;
-    }
-
-    setComentarios((anteriores) => [datos.comentario, ...anteriores]);
-    setNuevoComentario("");
-  } catch (err) {
-    console.error(err);
-    setErrorComentarios("No se pudo conectar con el servidor");
-  }
-}
-
-function iniciarEdicion(comentario: Comentario) {
-  setIdComentarioEditando(comentario.idComentario);
-  setTextoEditado(comentario.texto);
-  setErrorComentarios("");
-}
-
-function cancelarEdicion() {
-  setIdComentarioEditando(null);
-  setTextoEditado("");
-}
-
-async function guardarEdicion(idComentario: number) {
-  if (!textoEditado.trim() || !token) {
-    setErrorComentarios("El comentario no puede estar vacío");
-    return;
-  }
-
-  try {
-    const respuesta = await fetch(
-      `http://localhost:3000/comentarios/${idComentario}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ texto: textoEditado })
-      }
+    const confirmar = window.confirm(
+      "¿Seguro que querés eliminar este comentario? También se eliminarán todas sus respuestas."
     );
 
-    const datos = await respuesta.json();
+    if (!confirmar) return;
 
-    if (!respuesta.ok) {
-      setErrorComentarios(datos.error || "No se pudo editar el comentario");
-      return;
-    }
-
-    setComentarios((anteriores) =>
-      anteriores.map((comentario) =>
-        comentario.idComentario === idComentario
-          ? datos.comentario
-          : comentario
-      )
-    );
-
-    cancelarEdicion();
-  } catch (err) {
-    console.error(err);
-    setErrorComentarios("No se pudo conectar con el servidor");
-  }
-}
-
-async function eliminarComentario(idComentario: number) {
-  if (!token) return;
-
-const confirmar = window.confirm(
-  "¿Seguro que querés eliminar este comentario? También se eliminarán todas sus respuestas."
-);
-
-  if (!confirmar) return;
-
-  try {
-    const respuesta = await fetch(
-      `http://localhost:3000/comentarios/${idComentario}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`
+    try {
+      const respuesta = await fetch(
+        `http://localhost:3000/comentarios/${idComentario}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
+      );
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        setErrorComentarios(
+          datos.error || "No se pudo eliminar el comentario"
+        );
+        return;
       }
-    );
 
-    const datos = await respuesta.json();
+      setComentarios((anteriores) => {
+        const idsEliminados = new Set<number>([idComentario]);
 
-    if (!respuesta.ok) {
-      setErrorComentarios(datos.error || "No se pudo eliminar el comentario");
-      return;
-    }
+        let hayCambios = true;
 
-setComentarios((anteriores) => {
-  const idsEliminados = new Set<number>([idComentario]);
+        while (hayCambios) {
+          hayCambios = false;
 
-  let hayCambios = true;
+          for (const comentario of anteriores) {
+            if (
+              comentario.idComentarioPadre !== null &&
+              idsEliminados.has(comentario.idComentarioPadre) &&
+              !idsEliminados.has(comentario.idComentario)
+            ) {
+              idsEliminados.add(comentario.idComentario);
+              hayCambios = true;
+            }
+          }
+        }
 
-  while (hayCambios) {
-    hayCambios = false;
+        return anteriores.filter(
+          (comentario) => !idsEliminados.has(comentario.idComentario)
+        );
+      });
 
-    for (const comentario of anteriores) {
-      if (
-        comentario.idComentarioPadre !== null &&
-        idsEliminados.has(comentario.idComentarioPadre) &&
-        !idsEliminados.has(comentario.idComentario)
-      ) {
-        idsEliminados.add(comentario.idComentario);
-        hayCambios = true;
-      }
+      setIdComentarioRespondiendo(null);
+      setTextoRespuesta("");
+      setIdComentarioEditando(null);
+      setTextoEditado("");
+      setErrorComentarios("");
+    } catch (err) {
+      console.error(err);
+      setErrorComentarios("No se pudo conectar con el servidor");
     }
   }
-
-  return anteriores.filter(
-    (comentario) => !idsEliminados.has(comentario.idComentario)
-  );
-});
-
-setIdComentarioRespondiendo(null);
-setTextoRespuesta("");
-setIdComentarioEditando(null);
-setTextoEditado("");
-setErrorComentarios("");
-  } catch (err) {
-    console.error(err);
-    setErrorComentarios("No se pudo conectar con el servidor");
-  }
-}
 
   function renderizarComentario(comentario: Comentario): ReactNode {
     const respuestas = comentarios
-      .filter(respuesta => respuesta.idComentarioPadre === comentario.idComentario)
-      .sort((a, b) => new Date(a.fechaHora).getTime() - new Date(b.fechaHora).getTime());
+      .filter(
+        (respuesta) => respuesta.idComentarioPadre === comentario.idComentario
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.fechaHora).getTime() - new Date(b.fechaHora).getTime()
+      );
     return (
       <article className="comentario-card" key={comentario.idComentario}>
         <div className="comentario-avatar" aria-hidden="true">
-  {comentario.usuario.nombre.charAt(0).toUpperCase()}
-</div>
-
-<div className="comentario-contenido">
-        <div className="comentario-meta">
-         <strong>{comentario.usuario.nombre}</strong>
-          <span>
-            {new Date(comentario.fechaHora).toLocaleString("es-AR")}
-          </span>
+          {comentario.usuario.nombre.charAt(0).toUpperCase()}
         </div>
 
-        {idComentarioEditando === comentario.idComentario ? (
-  <div className="comentario-edicion">
-    <textarea
-      value={textoEditado}
-      onChange={(e) => setTextoEditado(e.target.value)}
-      rows={3}
-    />
+        <div className="comentario-contenido">
+          <div className="comentario-meta">
+            <strong>{comentario.usuario.nombre}</strong>
+            <span>
+              {new Date(comentario.fechaHora).toLocaleString("es-AR")}
+            </span>
+          </div>
 
-    <div className="comentario-acciones">
-      <button
-        type="button"
-        onClick={() => guardarEdicion(comentario.idComentario)}
-      >
-        Guardar
-      </button>
+          {idComentarioEditando === comentario.idComentario ? (
+            <div className="comentario-edicion">
+              <textarea
+                value={textoEditado}
+                onChange={(e) => setTextoEditado(e.target.value)}
+                rows={3}
+              />
 
-      <button type="button" onClick={cancelarEdicion}>
-        Cancelar
-      </button>
-    </div>
-  </div>
-) : (
-  <>
-    <p>{comentario.texto}</p>
+              <div className="comentario-acciones">
+                <button
+                  type="button"
+                  onClick={() => guardarEdicion(comentario.idComentario)}
+                >
+                  Guardar
+                </button>
 
-{usuario && (
-  <button
-    type="button"
-    className="comentario-responder"
-    disabled={enviandoRespuesta}
-    onClick={() => {
-      setIdComentarioRespondiendo(comentario.idComentario);
-      setTextoRespuesta("");
-      setErrorComentarios("");
-    }}
-  >
-    Responder
-  </button>
-)}
+                <button type="button" onClick={cancelarEdicion}>
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p>{comentario.texto}</p>
 
-{usuario && idComentarioRespondiendo === comentario.idComentario && (
-  <form className="comentario-form" onSubmit={enviarRespuesta}>
-    <label htmlFor={`respuesta-${comentario.idComentario}`}>
-      Responder a {comentario.usuario.nombre}
-    </label>
+              {usuario && (
+                <button
+                  type="button"
+                  className="comentario-responder"
+                  disabled={enviandoRespuesta}
+                  onClick={() => {
+                    setIdComentarioRespondiendo(comentario.idComentario);
+                    setTextoRespuesta("");
+                    setErrorComentarios("");
+                  }}
+                >
+                  Responder
+                </button>
+              )}
 
-    <textarea
-      id={`respuesta-${comentario.idComentario}`}
-      value={textoRespuesta}
-      onChange={(e) => setTextoRespuesta(e.target.value)}
-      placeholder="Escribí tu respuesta..."
-      rows={2}
-      required
-      disabled={enviandoRespuesta}
-    />
+              {usuario &&
+                idComentarioRespondiendo === comentario.idComentario && (
+                  <form className="comentario-form" onSubmit={enviarRespuesta}>
+                    <label htmlFor={`respuesta-${comentario.idComentario}`}>
+                      Responder a {comentario.usuario.nombre}
+                    </label>
 
-    <div className="comentario-acciones">
-      <button
-        type="submit"
-        disabled={enviandoRespuesta || !textoRespuesta.trim()}
-      >
-        {enviandoRespuesta ? "Enviando..." : "Enviar respuesta"}
-      </button>
+                    <textarea
+                      id={`respuesta-${comentario.idComentario}`}
+                      value={textoRespuesta}
+                      onChange={(e) => setTextoRespuesta(e.target.value)}
+                      placeholder="Escribí tu respuesta..."
+                      rows={2}
+                      required
+                      disabled={enviandoRespuesta}
+                    />
 
-      <button
-        type="button"
-        disabled={enviandoRespuesta}
-        onClick={() => {
-          setIdComentarioRespondiendo(null);
-          setTextoRespuesta("");
-        }}
-      >
-        Cancelar
-      </button>
-    </div>
-  </form>
-)}
+                    <div className="comentario-acciones">
+                      <button
+                        type="submit"
+                        disabled={enviandoRespuesta || !textoRespuesta.trim()}
+                      >
+                        {enviandoRespuesta ? "Enviando..." : "Enviar respuesta"}
+                      </button>
 
-{usuario?.idUsuario === comentario.idUsuario && (
-  <details className="comentario-menu">
-    <summary aria-label="Opciones del comentario">⋯</summary>
+                      <button
+                        type="button"
+                        disabled={enviandoRespuesta}
+                        onClick={() => {
+                          setIdComentarioRespondiendo(null);
+                          setTextoRespuesta("");
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                )}
 
-    <div className="comentario-menu-opciones">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.currentTarget.closest("details")?.removeAttribute("open");
-          iniciarEdicion(comentario);
-        }}
-      >
-        Editar
-      </button>
+              {usuario?.idUsuario === comentario.idUsuario && (
+                <details className="comentario-menu">
+                  <summary aria-label="Opciones del comentario">⋯</summary>
 
-      <button
-        type="button"
-        onClick={(e) => {
-          e.currentTarget.closest("details")?.removeAttribute("open");
-          eliminarComentario(comentario.idComentario);
-        }}
-      >
-        Eliminar
-      </button>
-    </div>
-  </details>
-)}
-  </>
+                  <div className="comentario-menu-opciones">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.currentTarget
+                          .closest("details")
+                          ?.removeAttribute("open");
+                        iniciarEdicion(comentario);
+                      }}
+                    >
+                      Editar
+                    </button>
 
-)}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.currentTarget
+                          .closest("details")
+                          ?.removeAttribute("open");
+                        eliminarComentario(comentario.idComentario);
+                      }}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </details>
+              )}
+            </>
+          )}
           {respuestas.length > 0 && (
             <details className="comentario-respuestas">
               <summary>
@@ -961,25 +1046,64 @@ setErrorComentarios("");
   if (error || !reporte) {
     return (
       <Layout>
-        <p className="detalle-mensaje detalle-error">{error || "Reporte no encontrado"}</p>
+        <p className="detalle-mensaje detalle-error">
+          {error || "Reporte no encontrado"}
+        </p>
       </Layout>
     );
   }
 
   const fecha = new Date(reporte.fechaHora);
   const fechaFormateada = fecha.toLocaleDateString("es-AR");
-  const horaFormateada = fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  const horaFormateada = fecha.toLocaleTimeString("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 
   return (
     <Layout>
       <div className="detalle-reporte">
         <div className="detalle-header">
-          <span className={`badge-estado badge-${reporte.estado.toLowerCase()}`}>
-            {ESTADO_LABELS[reporte.estado]}
-          </span>
+          <div className="detalle-header-top">
+            <span
+              className={`badge-estado badge-${reporte.estado.toLowerCase()}`}
+            >
+              {ESTADO_LABELS[reporte.estado]}
+            </span>
+
+            {puedeGestionarResoluciones && reporte.estado !== "RESUELTO" && (
+              <>
+                {reporte.estado === "NO_VERIFICADO" && (
+                  <button
+                    type="button"
+                    className="btn-cambiar-estado btn-investigar"
+                    disabled={guardandoEstado}
+                    onClick={() => cambiarEstadoReporte("EN_INVESTIGACION")}
+                  >
+                    {guardandoEstado ? "Guardando..." : "Investigar"}
+                  </button>
+                )}
+
+                {reporte.estado === "EN_INVESTIGACION" && (
+                  <button
+                    type="button"
+                    className="btn-cambiar-estado"
+                    disabled={guardandoEstado}
+                    onClick={() => cambiarEstadoReporte("NO_VERIFICADO")}
+                  >
+                    {guardandoEstado
+                      ? "Guardando..."
+                      : "Volver a No Verificado"}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+
           <h1>{reporte.titulo}</h1>
           <p className="detalle-meta">
-            Por <strong>{reporte.usuario.nombre}</strong> · {fechaFormateada} a las {horaFormateada}
+            Por <strong>{reporte.usuario.nombre}</strong> · {fechaFormateada} a
+            las {horaFormateada}
           </p>
         </div>
 
@@ -990,367 +1114,437 @@ setErrorComentarios("");
           </span>
         </div>
 
-<div className="detalle-contenido-reporte">
-  <p className="detalle-cuerpo">{reporte.cuerpo}</p>
+        <div className="detalle-contenido-reporte">
+          <p className="detalle-cuerpo">{reporte.cuerpo}</p>
 
-{reporte.imagenes.length > 0 && (
-  <div className="detalle-imagenes">
-    {reporte.imagenes.map((img, indice) => (
-      <button
-        key={img.idImagen}
-        type="button"
-        className="imagen-miniatura"
-        aria-label={`Ampliar imagen ${indice + 1} del reporte`}
-        onClick={() => {
-          setZoomImagen(1);
-          setImagenAmpliada(`http://localhost:3000${img.url}`);
-        }}
-      >
-        <img
-          src={`http://localhost:3000${img.url}`}
-          alt={`${reporte.titulo}: imagen ${indice + 1}`}
-          loading="lazy"
-        />
-      </button>
-    ))}
-  </div>
-)}
-
-<section className="detalle-reacciones" aria-label="Reacciones">
-
-  {cargandoReacciones ? (
-    <p className="detalle-mensaje">Cargando reacciones...</p>
-  ) : (
-    <div className="reacciones-lista">
-      {tiposReaccion
-  .filter((tipo) =>
-    reacciones.some(
-      (reaccion) =>
-        reaccion.idUsuario === usuario?.idUsuario &&
-        reaccion.idTipoReaccion === tipo.idTipoReaccion
-    )
-  )
-  .map(({ idTipoReaccion, emoji, nombre }) => {
-        const cantidad = reacciones.filter(
-          (reaccion) => reaccion.idTipoReaccion === idTipoReaccion
-        ).length;
-
-        const seleccionada = reacciones.some(
-          (reaccion) =>
-            reaccion.idTipoReaccion === idTipoReaccion &&
-            reaccion.idUsuario === usuario?.idUsuario
-        );
-
-        return (
-          <button
-            type="button"
-            className={`reaccion-boton ${
-              seleccionada ? "reaccion-seleccionada" : ""
-            }`}
-            key={idTipoReaccion}
-            title={nombre}
-            aria-label={`${nombre}: ${cantidad}`}
-            aria-pressed={seleccionada}
-            disabled={procesandoReaccion}
-            onClick={() => reaccionar(idTipoReaccion)}
-          >
-            <span className="reaccion-emoji">{emoji}</span>
-            <span className="reaccion-cantidad">{cantidad}</span>
-          </button>
-        );
-      })}
-      <button
-  type="button"
-  className="reaccion-boton reaccion-agregar"
-  aria-label="Ver todas las reacciones"
-  aria-expanded={selectorReaccionesAbierto}
-  aria-controls="catalogo-reacciones"
-  onClick={() => setSelectorReaccionesAbierto((abierto) => !abierto)}
->
-<svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-    <circle cx="16" cy="16" r="13" stroke="currentColor" strokeWidth="2" />
-    <path d="M8.5 10.5 12 9M20 9l3.5 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <ellipse cx="11.5" cy="15" rx="1.6" ry="2.2" fill="currentColor" />
-    <ellipse cx="20.5" cy="15" rx="1.6" ry="2.2" fill="currentColor" />
-    <ellipse cx="16" cy="23" rx="3" ry="3.8" stroke="currentColor" strokeWidth="2" />
-  </svg>
-</button>
-    </div>
-  )}
-
-{selectorReaccionesAbierto && (
-  <div id="catalogo-reacciones" className="catalogo-reacciones">
-    <p>Elegí una reacción</p>
-
-    <div className="reacciones-lista">
-      {tiposReaccion.map(({ idTipoReaccion, emoji, nombre }) => (
-        <button
-          key={idTipoReaccion}
-          type="button"
-          className="reaccion-boton"
-          title={nombre}
-          aria-label={nombre}
-          aria-pressed={reacciones.some(
-            (reaccion) =>
-              reaccion.idTipoReaccion === idTipoReaccion &&
-              reaccion.idUsuario === usuario?.idUsuario
+          {reporte.imagenes.length > 0 && (
+            <div className="detalle-imagenes">
+              {reporte.imagenes.map((img, indice) => (
+                <button
+                  key={img.idImagen}
+                  type="button"
+                  className="imagen-miniatura"
+                  aria-label={`Ampliar imagen ${indice + 1} del reporte`}
+                  onClick={() => {
+                    setZoomImagen(1);
+                    setImagenAmpliada(`http://localhost:3000${img.url}`);
+                  }}
+                >
+                  <img
+                    src={`http://localhost:3000${img.url}`}
+                    alt={`${reporte.titulo}: imagen ${indice + 1}`}
+                    loading="lazy"
+                  />
+                </button>
+              ))}
+            </div>
           )}
-          disabled={procesandoReaccion}
-          onClick={() => {
-            setSelectorReaccionesAbierto(false);
-            reaccionar(idTipoReaccion);
+
+          <section className="detalle-reacciones" aria-label="Reacciones">
+            {cargandoReacciones ? (
+              <p className="detalle-mensaje">Cargando reacciones...</p>
+            ) : (
+              <div className="reacciones-lista">
+                {tiposReaccion
+                  .filter((tipo) =>
+                    reacciones.some(
+                      (reaccion) =>
+                        reaccion.idUsuario === usuario?.idUsuario &&
+                        reaccion.idTipoReaccion === tipo.idTipoReaccion
+                    )
+                  )
+                  .map(({ idTipoReaccion, emoji, nombre }) => {
+                    const cantidad = reacciones.filter(
+                      (reaccion) => reaccion.idTipoReaccion === idTipoReaccion
+                    ).length;
+
+                    const seleccionada = reacciones.some(
+                      (reaccion) =>
+                        reaccion.idTipoReaccion === idTipoReaccion &&
+                        reaccion.idUsuario === usuario?.idUsuario
+                    );
+
+                    return (
+                      <button
+                        type="button"
+                        className={`reaccion-boton ${
+                          seleccionada ? "reaccion-seleccionada" : ""
+                        }`}
+                        key={idTipoReaccion}
+                        title={nombre}
+                        aria-label={`${nombre}: ${cantidad}`}
+                        aria-pressed={seleccionada}
+                        disabled={procesandoReaccion}
+                        onClick={() => reaccionar(idTipoReaccion)}
+                      >
+                        <span className="reaccion-emoji">{emoji}</span>
+                        <span className="reaccion-cantidad">{cantidad}</span>
+                      </button>
+                    );
+                  })}
+
+                <button
+                  type="button"
+                  className="reaccion-boton reaccion-agregar"
+                  aria-label="Ver todas las reacciones"
+                  aria-expanded={selectorReaccionesAbierto}
+                  aria-controls="catalogo-reacciones"
+                  onClick={() =>
+                    setSelectorReaccionesAbierto((abierto) => !abierto)
+                  }
+                >
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 32 32"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="16"
+                      cy="16"
+                      r="13"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M8.5 10.5 12 9M20 9l3.5 1.5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                    <ellipse
+                      cx="11.5"
+                      cy="15"
+                      rx="1.6"
+                      ry="2.2"
+                      fill="currentColor"
+                    />
+                    <ellipse
+                      cx="20.5"
+                      cy="15"
+                      rx="1.6"
+                      ry="2.2"
+                      fill="currentColor"
+                    />
+                    <ellipse
+                      cx="16"
+                      cy="23"
+                      rx="3"
+                      ry="3.8"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {selectorReaccionesAbierto && (
+              <div id="catalogo-reacciones" className="catalogo-reacciones">
+                <p>Elegí una reacción</p>
+
+                <div className="reacciones-lista">
+                  {tiposReaccion.map(
+                    ({ idTipoReaccion, emoji, nombre }) => (
+                      <button
+                        key={idTipoReaccion}
+                        type="button"
+                        className="reaccion-boton"
+                        title={nombre}
+                        aria-label={nombre}
+                        aria-pressed={reacciones.some(
+                          (reaccion) =>
+                            reaccion.idTipoReaccion === idTipoReaccion &&
+                            reaccion.idUsuario === usuario?.idUsuario
+                        )}
+                        disabled={procesandoReaccion}
+                        onClick={() => {
+                          setSelectorReaccionesAbierto(false);
+                          reaccionar(idTipoReaccion);
+                        }}
+                      >
+                        <span className="reaccion-emoji">{emoji}</span>
+                      </button>
+                    )
+                  )}
+                </div>
+
+                {tiposReaccion.length === 0 && (
+                  <p>No hay tipos de reacción disponibles.</p>
+                )}
+              </div>
+            )}
+
+            {errorReacciones && (
+              <p className="detalle-mensaje detalle-error">{errorReacciones}</p>
+            )}
+          </section>
+        </div>
+
+        <section className="detalle-resoluciones">
+          <h2>Resoluciones</h2>
+
+          {puedeGestionarResoluciones &&
+            !cargandoResoluciones &&
+            !errorResoluciones &&
+            resoluciones.length === 0 &&
+            !formularioResolucionAbierto && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIdResolucionEditando(null);
+                  setTituloResolucion("");
+                  setCuerpoResolucion("");
+                  setErrorResoluciones("");
+                  setFormularioResolucionAbierto(true);
+                }}
+              >
+                Agregar resolución
+              </button>
+            )}
+
+          {puedeGestionarResoluciones && formularioResolucionAbierto && (
+            <form className="resolucion-form" onSubmit={guardarResolucion}>
+              <h3>
+                {idResolucionEditando !== null
+                  ? "Editar resolución"
+                  : "Agregar resolución"}
+              </h3>
+
+              <label htmlFor="titulo-resolucion">Título</label>
+              <input
+                id="titulo-resolucion"
+                type="text"
+                value={tituloResolucion}
+                onChange={(e) => setTituloResolucion(e.target.value)}
+                maxLength={191}
+                required
+                disabled={guardandoResolucion}
+                placeholder="Ejemplo: Anomalía controlada"
+              />
+
+              <label htmlFor="cuerpo-resolucion">
+                ¿Cómo se resolvió el reporte?
+              </label>
+              <textarea
+                id="cuerpo-resolucion"
+                value={cuerpoResolucion}
+                onChange={(e) => setCuerpoResolucion(e.target.value)}
+                rows={5}
+                required
+                disabled={guardandoResolucion}
+                placeholder="Describí las acciones realizadas y el resultado."
+              />
+
+              <p className="detalle-mensaje">
+                {idResolucionEditando !== null
+                  ? "Se actualizarán el título y la descripción de esta resolución."
+                  : "Al guardar, el reporte pasará al estado Resuelto."}
+              </p>
+
+              <button
+                type="submit"
+                disabled={guardandoResolucion || cargandoResoluciones}
+              >
+                {guardandoResolucion
+                  ? "Guardando..."
+                  : idResolucionEditando !== null
+                    ? "Guardar cambios"
+                    : "Guardar resolución"}
+              </button>
+
+              <button
+                type="button"
+                disabled={guardandoResolucion}
+                onClick={() => {
+                  setIdResolucionEditando(null);
+                  setTituloResolucion("");
+                  setCuerpoResolucion("");
+                  setErrorResoluciones("");
+                  setFormularioResolucionAbierto(false);
+                }}
+              >
+                Cancelar
+              </button>
+            </form>
+          )}
+
+          {cargandoResoluciones && (
+            <p className="detalle-mensaje">Cargando resoluciones...</p>
+          )}
+
+          {errorResoluciones && (
+            <p className="detalle-error" role="alert">
+              {errorResoluciones}
+            </p>
+          )}
+
+          {!cargandoResoluciones &&
+            !errorResoluciones &&
+            (resoluciones.length === 0 ? (
+              <p className="detalle-mensaje">
+                Este reporte todavía no tiene resoluciones.
+              </p>
+            ) : (
+              resoluciones.map((resolucion) => (
+                <article
+                  className="resolucion-item"
+                  key={resolucion.idResolucion}
+                >
+                  <div className="resolucion-header">
+                    <div className="resolucion-info">
+                      <h3>{resolucion.resolucion}</h3>
+                      <p className="detalle-meta">
+                        {resolucion.usuario
+                          ? `Resuelto por ${resolucion.usuario.nombre}`
+                          : "Autor no registrado"}
+                      </p>
+
+                      <time
+                        className="detalle-meta"
+                        dateTime={resolucion.fechaHora}
+                      >
+                        {new Date(resolucion.fechaHora).toLocaleString("es-AR")}
+                      </time>
+                    </div>
+
+                    {puedeGestionarResoluciones && (
+                      <div className="resolucion-acciones">
+                        <button
+                          type="button"
+                          disabled={guardandoResolucion || cargandoResoluciones}
+                          onClick={() => {
+                            setIdResolucionEditando(resolucion.idResolucion);
+                            setTituloResolucion(resolucion.resolucion);
+                            setCuerpoResolucion(resolucion.cuerpoResolucion);
+                            setErrorResoluciones("");
+                            setFormularioResolucionAbierto(true);
+                          }}
+                        >
+                          Editar
+                        </button>
+
+                        <button
+                          type="button"
+                          className="resolucion-eliminar"
+                          disabled={guardandoResolucion || cargandoResoluciones}
+                          onClick={() =>
+                            eliminarResolucion(resolucion.idResolucion)
+                          }
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="resolucion-texto">
+                    {resolucion.cuerpoResolucion}
+                  </p>
+                </article>
+              ))
+            ))}
+        </section>
+
+        <section className="detalle-comentarios">
+          <h2>Comentarios</h2>
+          {usuario ? (
+            <form className="comentario-form" onSubmit={crearComentario}>
+              <textarea
+                value={nuevoComentario}
+                onChange={(e) => setNuevoComentario(e.target.value)}
+                placeholder="Escribí un comentario..."
+                rows={3}
+              />
+
+              <button type="submit">Comentar</button>
+            </form>
+          ) : (
+            <p className="detalle-mensaje">
+              Iniciá sesión para escribir un comentario.
+            </p>
+          )}
+
+          {cargandoComentarios && (
+            <p className="detalle-mensaje">Cargando comentarios...</p>
+          )}
+
+          {errorComentarios && (
+            <p className="detalle-mensaje detalle-error">{errorComentarios}</p>
+          )}
+
+          {!cargandoComentarios &&
+            !errorComentarios &&
+            comentarios.length === 0 && (
+              <p className="detalle-mensaje">
+                Todavía no hay comentarios en este reporte.
+              </p>
+            )}
+
+          {!cargandoComentarios &&
+            comentarios
+              .filter((comentario) => comentario.idComentarioPadre === null)
+              .map(renderizarComentario)}
+        </section>
+      </div>
+
+      {imagenAmpliada && (
+        <dialog
+          id="visor-imagen"
+          className="visor-imagen"
+          aria-label="Imagen ampliada del reporte"
+          onClose={() => setImagenAmpliada(null)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) e.currentTarget.close();
           }}
         >
-          <span className="reaccion-emoji">{emoji}</span>
-        </button>
-      ))}
-    </div>
-
-    {tiposReaccion.length === 0 && (
-      <p>No hay tipos de reacción disponibles.</p>
-    )}
-  </div>
-)}
-
-  {errorReacciones && (
-    <p className="detalle-mensaje detalle-error">{errorReacciones}</p>
-  )}
-</section>
-</div>
-
-
-<section className="detalle-resoluciones">
-  <h2>Resoluciones</h2>
-
-{puedeGestionarResoluciones &&
-  !cargandoResoluciones &&
-  !errorResoluciones &&
-  resoluciones.length === 0 &&
-  !formularioResolucionAbierto && (
-    <button type="button" onClick={() => {
-      setIdResolucionEditando(null);
-      setTituloResolucion("");
-      setCuerpoResolucion("");
-      setErrorResoluciones("");
-      setFormularioResolucionAbierto(true);
-    }}>
-      Agregar resolución
-    </button>
-  )}
-
-{puedeGestionarResoluciones && formularioResolucionAbierto && (
-  <form
-    className="resolucion-form"
-    onSubmit={guardarResolucion}
-  >
-<h3>
-  {idResolucionEditando !== null
-    ? "Editar resolución"
-    : "Agregar resolución"}
-</h3>
-
-    <label htmlFor="titulo-resolucion">Título</label>
-    <input
-      id="titulo-resolucion"
-      type="text"
-      value={tituloResolucion}
-      onChange={(e) => setTituloResolucion(e.target.value)}
-      maxLength={191}
-      required
-      disabled={guardandoResolucion}
-      placeholder="Ejemplo: Anomalía controlada"
-    />
-
-    <label htmlFor="cuerpo-resolucion">
-      ¿Cómo se resolvió el reporte?
-    </label>
-    <textarea
-      id="cuerpo-resolucion"
-      value={cuerpoResolucion}
-      onChange={(e) => setCuerpoResolucion(e.target.value)}
-      rows={5}
-      required
-      disabled={guardandoResolucion}
-      placeholder="Describí las acciones realizadas y el resultado."
-    />
-
-<p className="detalle-mensaje">
-  {idResolucionEditando !== null
-    ? "Se actualizarán el título y la descripción de esta resolución."
-    : "Al guardar, el reporte pasará al estado Resuelto."}
-</p>
-
-<button
-  type="submit"
-  disabled={guardandoResolucion || cargandoResoluciones}
->
-  {guardandoResolucion
-    ? "Guardando..."
-    : idResolucionEditando !== null
-      ? "Guardar cambios"
-      : "Guardar resolución"}
-</button>
-
-<button
-    type="button"
-    disabled={guardandoResolucion}
-    onClick={() => {
-      setIdResolucionEditando(null);
-      setTituloResolucion("");
-      setCuerpoResolucion("");
-      setErrorResoluciones("");
-      setFormularioResolucionAbierto(false);
-    }}
-  >
-    Cancelar
-  </button>
-  </form>
-)}
-
-  {cargandoResoluciones && (
-    <p className="detalle-mensaje">Cargando resoluciones...</p>
-  )}
-
-  {errorResoluciones && (
-    <p className="detalle-error" role="alert">
-      {errorResoluciones}
-    </p>
-  )}
-
-  {!cargandoResoluciones && !errorResoluciones && (
-    resoluciones.length === 0 ? (
-      <p className="detalle-mensaje">
-        Este reporte todavía no tiene resoluciones.
-      </p>
-    ) : (
-      resoluciones.map((resolucion) => (
-<article
-  className="resolucion-item"
-  key={resolucion.idResolucion}
->
-  <div className="resolucion-header">
-    <div className="resolucion-info">
-      <h3>{resolucion.resolucion}</h3>
-      <p className="detalle-meta">
-        {resolucion.usuario ? `Resuelto por ${resolucion.usuario.nombre}` : "Autor no registrado"}
-      </p>
-
-      <time
-        className="detalle-meta"
-        dateTime={resolucion.fechaHora}
-      >
-        {new Date(resolucion.fechaHora).toLocaleString("es-AR")}
-      </time>
-    </div>
-
-    {puedeGestionarResoluciones && (
-      <div className="resolucion-acciones">
-        <button
-          type="button"
-          disabled={guardandoResolucion || cargandoResoluciones}
-          onClick={() => {
-            setIdResolucionEditando(resolucion.idResolucion);
-            setTituloResolucion(resolucion.resolucion);
-            setCuerpoResolucion(resolucion.cuerpoResolucion);
-            setErrorResoluciones("");
-            setFormularioResolucionAbierto(true);
-          }}
-        >
-          Editar
-        </button>
-
-        <button
-          type="button"
-          className="resolucion-eliminar"
-          disabled={guardandoResolucion || cargandoResoluciones}
-          onClick={() => eliminarResolucion(resolucion.idResolucion)}
-        >
-          Eliminar
-        </button>
-      </div>
-    )}
-  </div>
-
-  <p className="resolucion-texto">
-    {resolucion.cuerpoResolucion}
-  </p>
-</article>
-      ))
-    )
-  )}
-</section>
-
-
-
-
-       <section className="detalle-comentarios">
-        <h2>Comentarios</h2>
-        {usuario ? (
-  <form className="comentario-form" onSubmit={crearComentario}>
-    <textarea
-      value={nuevoComentario}
-      onChange={(e) => setNuevoComentario(e.target.value)}
-      placeholder="Escribí un comentario..."
-      rows={3}
-    />
-
-    <button type="submit">Comentar</button>
-  </form>
-) : (
-  <p className="detalle-mensaje">
-    Iniciá sesión para escribir un comentario.
-  </p>
-)}
-
-  {cargandoComentarios && (
-    <p className="detalle-mensaje">Cargando comentarios...</p>
-  )}
-
-  {errorComentarios && (
-    <p className="detalle-mensaje detalle-error">{errorComentarios}</p>
-  )}
-
-  {!cargandoComentarios &&
-    !errorComentarios &&
-    comentarios.length === 0 && (
-      <p className="detalle-mensaje">
-        Todavía no hay comentarios en este reporte.
-      </p>
-    )}
-
-  {!cargandoComentarios && comentarios
-    .filter(comentario => comentario.idComentarioPadre === null)
-    .map(renderizarComentario)}
-</section>
-      </div>
-{imagenAmpliada && (
-  <dialog
-    id="visor-imagen"
-    className="visor-imagen"
-    aria-label="Imagen ampliada del reporte"
-    onClose={() => setImagenAmpliada(null)}
-    onClick={(e) => {
-      if (e.target === e.currentTarget) e.currentTarget.close();
-    }}
-  >
-    <div className="visor-controles">
-      <button type="button" aria-label="Reducir imagen" disabled={zoomImagen <= 1}
-        onClick={() => setZoomImagen((zoom) => Math.max(1, zoom - 0.5))}>−</button>
-      <span aria-live="polite">{Math.round(zoomImagen * 100)}%</span>
-      <button type="button" aria-label="Ampliar imagen" disabled={zoomImagen >= 3}
-        onClick={() => setZoomImagen((zoom) => Math.min(3, zoom + 0.5))}>+</button>
-      <button type="button" onClick={() => setZoomImagen(1)}>Restablecer</button>
-      <button type="button" autoFocus
-        onClick={(e) => e.currentTarget.closest("dialog")?.close()}>Cerrar</button>
-    </div>
-    <div className="visor-area" data-zoom={zoomImagen} tabIndex={0}>
-      <div className="visor-lienzo"
-        style={{ width: `${zoomImagen * 100}%`, height: `${zoomImagen * 100}%` }}>
-        <img src={imagenAmpliada} alt={reporte.titulo} draggable={false} />
-      </div>
-    </div>
-  </dialog>
-)}
+          <div className="visor-controles">
+            <button
+              type="button"
+              aria-label="Reducir imagen"
+              disabled={zoomImagen <= 1}
+              onClick={() =>
+                setZoomImagen((zoom) => Math.max(1, zoom - 0.5))
+              }
+            >
+              −
+            </button>
+            <span aria-live="polite">{Math.round(zoomImagen * 100)}%</span>
+            <button
+              type="button"
+              aria-label="Ampliar imagen"
+              disabled={zoomImagen >= 3}
+              onClick={() =>
+                setZoomImagen((zoom) => Math.min(3, zoom + 0.5))
+              }
+            >
+              +
+            </button>
+            <button type="button" onClick={() => setZoomImagen(1)}>
+              Restablecer
+            </button>
+            <button
+              type="button"
+              autoFocus
+              onClick={(e) => e.currentTarget.closest("dialog")?.close()}
+            >
+              Cerrar
+            </button>
+          </div>
+          <div className="visor-area" data-zoom={zoomImagen} tabIndex={0}>
+            <div
+              className="visor-lienzo"
+              style={{
+                width: `${zoomImagen * 100}%`,
+                height: `${zoomImagen * 100}%`
+              }}
+            >
+              <img src={imagenAmpliada} alt={reporte.titulo} draggable={false} />
+            </div>
+          </div>
+        </dialog>
+      )}
     </Layout>
   );
 }

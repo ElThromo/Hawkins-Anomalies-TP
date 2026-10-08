@@ -69,3 +69,46 @@
         font-size: 1rem;
     }
 }
+
+/* ===== Header con botón al panel ===== */
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-section h2 {
+  margin: 0;
+}
+
+.btn-panel-investigador {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid #c1121f;
+  border-radius: 8px;
+  background: transparent;
+  color: #e63946;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-panel-investigador:hover {
+  background: #3a1115;
+  color: #fff;
+}
+
+.btn-panel-investigador:focus-visible {
+  outline: 2px solid #e63946;
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .header-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
