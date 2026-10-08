@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout/Layout";
 import { useAuth } from "../context/useAuth";
 import "../styles/AdminTable.css";
@@ -34,6 +35,7 @@ function colorDelNivel(nivel: string) {
 }
 
 function Zonas() {
+  const navigate = useNavigate();
   const { token } = useAuth();
   const [zonas, setZonas] = useState<Zona[]>([]);
   const [busqueda, setBusqueda] = useState("");
@@ -215,7 +217,14 @@ function Zonas() {
               {zonasFiltradas.map((zona) => (
                 <tr key={zona.idZona}>
                   <td>{zona.idZona}</td>
-                  <td>{zona.nombre}</td>
+                <td>
+                 <span
+                   className="zona-link"
+                   onClick={() => navigate(`/zonas/${zona.idZona}`)}
+                 >
+                   {zona.nombre}
+                 </span>
+                </td>
                   <td>{zona.descripcion}</td>
                   <td>
                     <span className="badge-nivel" style={{ color: colorDelNivel(zona.nivelPeligro) }}>

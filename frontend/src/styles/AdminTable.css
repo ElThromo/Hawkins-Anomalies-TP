@@ -360,4 +360,14 @@
     .modal-columna-preview {
         flex-shrink: 0;
     }
+
+    
+.zona-link {
+  cursor: pointer;
+}
+
+.zona-link:hover {
+  color: #e84b5b;
+  text-decoration: underline;
+}
 }

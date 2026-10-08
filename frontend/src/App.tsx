@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthProvider";
 import { SidebarProvider } from "./context/SidebarProvider";
 
+import DetalleZona from "./pages/DetalleZona";
 import InvestigadorPanel from "./pages/InvestigadorPanel";
 import RutaInvestigador from "./components/RutaInvestigador";
 
@@ -40,6 +41,7 @@ function App() {
             <Route path="/reporte/:id" element={<DetalleReporte />} />   
             <Route path="/perfil" element={<EditarPerfil />} />      
 
+            <Route path="/zonas/:id" element={<DetalleZona />} />
             {/* Panel de Investigadores Protegido */}
             <Route path="/investigador" element={
               <RutaInvestigador>

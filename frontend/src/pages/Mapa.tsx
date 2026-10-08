@@ -1,5 +1,5 @@
-
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapContainer, ImageOverlay, Circle, Marker, Popup } from "react-leaflet";
 import L, { CRS, type Map as LeafletMap } from "leaflet";
 import Layout from "../components/Layout/Layout";
@@ -56,6 +56,8 @@ function crearIconoBadge(cantidad: number) {
 const bounds: L.LatLngBoundsExpression = [[0, 0], [ALTO_IMAGEN, ANCHO_IMAGEN]];
 
 function Mapa() {
+  const navigate = useNavigate();
+
   const [zonas, setZonas] = useState<Zona[]>([]);
   const [conteoReportes, setConteoReportes] = useState<Record<number, number>>({});
   const [cargando, setCargando] = useState(true);
@@ -176,19 +178,22 @@ function Mapa() {
                         center={posicion}
                         radius={radio}
                         pathOptions={{
-                          color: COLOR_NIVEL[zona.nivelPeligro],
-                          fillColor: COLOR_NIVEL[zona.nivelPeligro],
-                          fillOpacity: 0.4,
-                          weight: 2
+                         color: COLOR_NIVEL[zona.nivelPeligro],
+                         fillColor: COLOR_NIVEL[zona.nivelPeligro],
+                         fillOpacity: 0.4,
+                         weight: 2
+                        }}
+                        eventHandlers={{
+                          click: () => navigate(`/zonas/${zona.idZona}`)
                         }}
                       >
-                        <Popup>
-                          <strong>{zona.nombre}</strong>
-                          <br />
-                          Nivel de peligro: {zona.nivelPeligro}
-                          <br />
-                          Reportes: {cantidad}
-                        </Popup>
+                            <Popup>
+                              <strong>{zona.nombre}</strong>
+                              <br />
+                              Nivel de peligro: {zona.nivelPeligro}
+                              <br />
+                              Reportes: {cantidad}
+                            </Popup>
                       </Circle>
 
                       <Marker position={posicion} icon={crearIconoZona(zona.nombre)} interactive={false} />
