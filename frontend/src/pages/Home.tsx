@@ -1,4 +1,5 @@
 
+import TopContribuyentes from "../components/TopContribuyentes";
 import TopInvestigadores from "../components/TopInvestigadores";
 import MiniMapa from "../components/MiniMapa";
 import { useState, useEffect } from "react";
@@ -246,6 +247,7 @@ function Home() {
             </ul>
           )}
         </div>
+                <TopContribuyentes />
       </section>
       </div>
     </Layout>

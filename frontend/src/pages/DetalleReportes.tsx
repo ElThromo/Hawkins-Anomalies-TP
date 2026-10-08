@@ -36,6 +36,7 @@ interface Comentario {
   usuario: {
     idUsuario: number;
     nombre: string;
+    avatar: string | null;
   };
 }
 
@@ -61,6 +62,7 @@ const ESTADO_LABELS: Record<string, string> = {
 function DetalleReporte() {
   const { id } = useParams();
   const { usuario, token } = useAuth();
+    const [avataresFallidos, setAvataresFallidos] = useState<string[]>([]);
   const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
   const [zoomImagen, setZoomImagen] = useState(1);
 
@@ -897,8 +899,32 @@ function DetalleReporte() {
       );
     return (
       <article className="comentario-card" key={comentario.idComentario}>
-        <div className="comentario-avatar" aria-hidden="true">
-          {comentario.usuario.nombre.charAt(0).toUpperCase()}
+                <div className="comentario-avatar" aria-hidden="true">
+          {comentario.usuario.avatar &&
+          !avataresFallidos.includes(comentario.usuario.avatar) ? (
+            <img
+              src={new URL(
+                comentario.usuario.avatar,
+                `${(
+                  import.meta.env.VITE_API_URL || "http://localhost:3000"
+                ).replace(/\/$/, "")}/`
+              ).href}
+              alt=""
+              loading="lazy"
+              onError={() => {
+                const avatar = comentario.usuario.avatar;
+                if (!avatar) return;
+
+                setAvataresFallidos((actuales) =>
+                  actuales.includes(avatar)
+                    ? actuales
+                    : [...actuales, avatar]
+                );
+              }}
+            />
+          ) : (
+            comentario.usuario.nombre.charAt(0).toUpperCase()
+          )}
         </div>
 
         <div className="comentario-contenido">

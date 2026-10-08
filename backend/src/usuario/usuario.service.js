@@ -1,3 +1,4 @@
+
 const bcrypt = require("bcrypt");
 const usuarioRepository = require("./usuario.repository");
 
@@ -51,6 +52,10 @@ async function actualizarAvatar(idUsuario, rutaArchivo) {
     return await usuarioRepository.actualizarUsuario(idUsuario, { avatar: rutaArchivo });
 }
 
+async function obtenerTopContribuyentes() {
+    return await usuarioRepository.obtenerTopContribuyentes();
+}
+
 module.exports = {
     obtenerUsuarios,
     obtenerUsuarioPorId,
@@ -58,5 +63,6 @@ module.exports = {
     actualizarUsuario,
     eliminarUsuario,
     actualizarPerfilPropio,
-    actualizarAvatar
+    actualizarAvatar,
+    obtenerTopContribuyentes
 };
