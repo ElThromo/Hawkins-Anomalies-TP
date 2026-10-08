@@ -149,7 +149,7 @@ function DetalleZona() {
           ← Volver
         </button>
 
-        <div className="detalle-header">
+        <div className="detalle-header-zona">
           <span
             className="badge-estado"
             style={{
@@ -163,21 +163,12 @@ function DetalleZona() {
 
           <h1>{zona.nombre}</h1>
 
-          <p className="detalle-meta">
+          <h2 className="detalle-meta">
             {reportes.length}{" "}
             {reportes.length === 1
               ? "reporte registrado"
               : "reportes registrados"}
-          </p>
-        </div>
-
-        <div className="detalle-tags">
-          <span className="tag">
-            Nivel: {NIVEL_LABELS[zona.nivelPeligro] || zona.nivelPeligro}
-          </span>
-          <span className="tag tag-zona">
-            Reportes: {reportes.length}
-          </span>
+          </h2>
         </div>
 
         <div className="detalle-contenido-reporte">

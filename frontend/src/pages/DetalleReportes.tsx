@@ -1309,26 +1309,7 @@ function DetalleReporte() {
         </div>
 
         <section className="detalle-resoluciones">
-          <h2>Resoluciones</h2>
-
-          {puedeGestionarResoluciones &&
-            !cargandoResoluciones &&
-            !errorResoluciones &&
-            resoluciones.length === 0 &&
-            !formularioResolucionAbierto && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIdResolucionEditando(null);
-                  setTituloResolucion("");
-                  setCuerpoResolucion("");
-                  setErrorResoluciones("");
-                  setFormularioResolucionAbierto(true);
-                }}
-              >
-                Agregar resolución
-              </button>
-            )}
+          <h2>Resolución</h2>
 
           {puedeGestionarResoluciones && formularioResolucionAbierto && (
             <form className="resolucion-form" onSubmit={guardarResolucion}>
@@ -1410,7 +1391,7 @@ function DetalleReporte() {
             !errorResoluciones &&
             (resoluciones.length === 0 ? (
               <p className="detalle-mensaje">
-                Este reporte todavía no tiene resoluciones.
+                Este reporte todavía no tiene resolución.
               </p>
             ) : (
               resoluciones.map((resolucion) => (
@@ -1471,6 +1452,26 @@ function DetalleReporte() {
                 </article>
               ))
             ))}
+
+            {puedeGestionarResoluciones &&
+            !cargandoResoluciones &&
+            !errorResoluciones &&
+            resoluciones.length === 0 &&
+            !formularioResolucionAbierto && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIdResolucionEditando(null);
+                  setTituloResolucion("");
+                  setCuerpoResolucion("");
+                  setErrorResoluciones("");
+                  setFormularioResolucionAbierto(true);
+                }}
+              >
+                Agregar resolución
+              </button>
+            )}
+
         </section>
 
         <section className="detalle-comentarios">

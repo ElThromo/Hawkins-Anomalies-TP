@@ -15,10 +15,18 @@
   gap: 18px;
 }
 
-.detalle-header h1 {
+.detalle-header-zona h1 {
   color: #c1121f;
   font-family: "Elms Sans", sans-serif;
   font-size: 1.6rem;
+  margin: 10px 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.detalle-header-zona h2 {
+  color: #ffffff;
+  font-family: "Elms Sans", sans-serif;
+  font-size: 1rem;
   margin: 10px 0 8px;
   overflow-wrap: anywhere;
 }
@@ -216,8 +224,12 @@
 /* desktop */
 
 @media (min-width: 768px) {
-  .detalle-header h1 {
-    font-size: 2.2rem;
+  .detalle-header-zona h1 {
+    font-size: 3rem;
+  }
+
+  .detalle-header-zona h2 {
+    font-size: 22px;
   }
 }
 
