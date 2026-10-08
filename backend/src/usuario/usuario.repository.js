@@ -1,3 +1,4 @@
+
 const prisma = require("../prisma");
 
 const camposSeguros = {
@@ -48,8 +49,38 @@ async function eliminarUsuario(id) {
     });
 }
 
+async function obtenerTopContribuyentes() {
+    const usuarios = await prisma.usuario.findMany({
+        where: {
+            activo: true,
+            reportes: { some: {} }
+        },
+        select: {
+            idUsuario: true,
+            nombre: true,
+            avatar: true,
+            _count: {
+                select: { reportes: true }
+            }
+        },
+        orderBy: [
+            { reportes: { _count: "desc" } },
+            { idUsuario: "asc" }
+        ],
+        take: 6
+    });
+
+    return usuarios.map((usuario) => ({
+        idUsuario: usuario.idUsuario,
+        nombre: usuario.nombre,
+        avatar: usuario.avatar,
+        reportesCreados: usuario._count.reportes
+    }));
+}
+
 module.exports = {
     obtenerUsuarios,
+    obtenerTopContribuyentes,
     obtenerUsuarioPorId,
     obtenerUsuarioPorEmail,
     crearUsuario,
