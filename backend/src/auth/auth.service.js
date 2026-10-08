@@ -35,7 +35,8 @@ async function login(email, contrasena) {
             idUsuario: usuario.idUsuario,
             nombre: usuario.nombre,
             email: usuario.email,
-            rol: usuario.rol
+            rol: usuario.rol,
+            avatar: usuario.avatar
         }
     };
 }
