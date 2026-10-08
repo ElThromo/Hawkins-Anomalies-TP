@@ -111,7 +111,7 @@ function Home() {
         </h1>
       </header>
       <header>
-        <h1>Inicio</h1>
+        <h4>Inicio</h4>
         <h3>Bienvenido a Hawkins Anomalies</h3>
       </header>
 

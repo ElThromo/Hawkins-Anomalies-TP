@@ -26,6 +26,14 @@ header h3 {
     font-family: "Elms Sans", sans-serif;
 }
 
+header h4 {
+    color: #c1121f;
+    font-family: "Elms Sans", sans-serif;
+    font-size: 1.8rem;
+    margin-top: 20px;
+    text-align: center;
+}
+
 .cards {
     display: grid;
     grid-template-columns: 1fr;
@@ -104,6 +112,12 @@ header h3 {
         font-size: 25px;
         margin-top: 10px;    
     }
+
+    header h4 {
+        font-size: 4.5rem;
+        margin-top: 20px;
+    }
+
     .cards {
         grid-template-columns: 1fr 1fr;
         gap: 25px;
@@ -157,9 +171,9 @@ header h3 {
     max-width: 1700px;
     height: auto;
     z-index: 0;
-    opacity: 70%;
+    opacity: 80%;
     pointer-events: none;
-    animation: glow-fondo 6s infinite alternate;
+    animation: glow-fondo 5s infinite alternate;
 
     mask-image: linear-gradient(to bottom, black 0%, black 35%, transparent 60%);
     -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 90%);
@@ -170,7 +184,7 @@ header h3 {
         filter: drop-shadow(0 0 0px #730e0e);
     }
     to {
-        filter: drop-shadow(0 0 10px #7c0d14) drop-shadow(0 0 50px #730e0e9c);
+        filter: drop-shadow(0 0 10px #7c0d14) drop-shadow(0 0 50px #730e0e);
     }
 }
 
