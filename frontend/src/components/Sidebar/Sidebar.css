@@ -146,18 +146,7 @@
     }
 
 .icon-investigador {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e2e8f0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  transition: transform .2s ease;
-}
-
-.icon-investigador:hover {
-  transform: scale(1.12);
-  filter: brightness(1.4);
+    mask-image: url("../../assets/lupa.svg");
+    -webkit-mask-image: url("../../assets/lupa.svg");
 }
 }
