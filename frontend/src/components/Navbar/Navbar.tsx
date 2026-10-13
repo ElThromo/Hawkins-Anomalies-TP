@@ -35,7 +35,6 @@ function Navbar() {
           {abierta ? "✕" : "☰"}
         </button>
 
-        {/* El logo solo aparece acá cuando la sidebar está cerrada */}
         {!abierta && (
           <span className="navbar-logo">
             <span className="navbar-logo-corto">HA</span>
@@ -47,7 +46,7 @@ function Navbar() {
       <div className="navbar-right">
         {usuario ? (
           <>
-            <Link to="/crear-reporte">
+            <Link to="/crear-reporte" className="navbar-crear-desktop">
               <button className="navbar-crear">+ Crear reporte</button>
             </Link>
 
@@ -78,6 +77,12 @@ function Navbar() {
           </Link>
         )}
       </div>
+
+      {usuario && (
+        <Link to="/crear-reporte" className="fab-crear-reporte" aria-label="Crear reporte">
+          +
+        </Link>
+      )}
     </header>
   );
 }
