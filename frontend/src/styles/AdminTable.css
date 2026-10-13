@@ -37,9 +37,12 @@
 }
 
 .table-container {
-    overflow-x: auto;
-    border: 1px solid #333;
-    border-radius: 10px;
+  background: #232323;
+  border: 1px solid #550000;
+  border-radius: 10px;
+  position: relative;
+  overflow-x: auto;
+  box-shadow: 0px 0px 20px rgba(180, 0, 0, 0.15);
 }
 
 .admin-table {
@@ -331,6 +334,27 @@
     font-weight: 600;
 }
 
+.zona-link {
+  cursor: pointer;
+}
+
+.zona-link:hover {
+  color: #e84b5b;
+  text-decoration: underline;
+}
+
+.table-container::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 24px;
+    background: linear-gradient(to right, transparent, #0a0a0a);
+    pointer-events: none;
+    position: relative;
+}
+
 /* desktop */
 
 @media (min-width: 768px) {
@@ -361,13 +385,7 @@
         flex-shrink: 0;
     }
 
-    
-.zona-link {
-  cursor: pointer;
-}
-
-.zona-link:hover {
-  color: #e84b5b;
-  text-decoration: underline;
-}
+    .table-container::after {
+        display: none;
+    }
 }
