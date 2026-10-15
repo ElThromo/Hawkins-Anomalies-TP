@@ -16,14 +16,30 @@ async function obtenerReaccionPorId(id) {
 
 async function crearReaccion(datos) {
   return await prisma.reaccion.create({
-    data: datos
+    data: datos,
+    include: {
+      tipoReaccion: {
+        select: {
+          nombre: true,
+          emoji: true
+        }
+      }
+    }
   });
 }
 
 async function actualizarReaccion(id, idTipoReaccion) {
   return await prisma.reaccion.update({
     where: { idReaccion: id },
-    data: { idTipoReaccion }
+    data: { idTipoReaccion },
+    include: {
+      tipoReaccion: {
+        select: {
+          nombre: true,
+          emoji: true
+        }
+      }
+    }
   });
 }
 

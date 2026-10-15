@@ -4,22 +4,56 @@ const prisma = require("../prisma");
 // Config reutilizable: qué traer de las relaciones cada vez que se pide un reporte
 const incluirRelaciones = {
     zona: {
-        select: { idZona: true, nombre: true, nivelPeligro: true }
+        select: {
+            idZona: true,
+            nombre: true,
+            nivelPeligro: true
+        }
     },
     usuario: {
-        select: { idUsuario: true, nombre: true } // nunca traer email ni contrasenaHash
+        select: {
+            idUsuario: true,
+            nombre: true,
+            avatar: true
+        }
     },
     categoria: {
-        select: { idCategoria: true, nombre: true }
+        select: {
+            idCategoria: true,
+            nombre: true
+        }
     },
-    imagenes: true
+    imagenes: {
+        orderBy: { idImagen: "asc" }
+    },
+    reacciones: {
+        select: {
+            idReaccion: true,
+            idUsuario: true,
+            idTipoReaccion: true,
+            tipoReaccion: {
+                select: {
+                    nombre: true,
+                    emoji: true
+                }
+            }
+        }
+    },
+    _count: {
+        select: {
+            comentarios: true
+        }
+    }
 };
 
 // OBTENER TODOS LOS REPORTES
 async function obtenerReportes() {
     return await prisma.reporte.findMany({
         include: incluirRelaciones,
-        orderBy: { fechaHora: "desc" }
+               orderBy: [
+            { fechaHora: "desc" },
+            { idReporte: "desc" }
+        ]
     });
 }
 
