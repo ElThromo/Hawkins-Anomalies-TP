@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Layout from "../components/Layout/Layout";
 import { useAuth } from "../context/useAuth";
@@ -31,9 +32,14 @@ function AdminUsuarios() {
       });
 
       if (!respuesta.ok) {
-        setError("No se pudieron cargar los usuarios");
-        return;
-      }
+  const datos = await respuesta.json().catch(() => null);
+
+  setError(
+    datos?.error ||
+    `No se pudieron cargar los usuarios. Código: ${respuesta.status}`
+  );
+  return;
+}
 
       setUsuarios(await respuesta.json());
     } catch (err) {
@@ -57,7 +63,12 @@ function AdminUsuarios() {
         if (cancelado) return;
 
         if (!respuesta.ok) {
-          setError("No se pudieron cargar los usuarios");
+          const datos = await respuesta.json().catch(() => null);
+
+          setError(
+            datos?.error ||
+            `No se pudieron cargar los usuarios. Código: ${respuesta.status}`
+          );
           return;
         }
 
