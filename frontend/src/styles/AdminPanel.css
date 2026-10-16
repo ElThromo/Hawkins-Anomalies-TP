@@ -1,4 +1,4 @@
-/* ===== BASE = MOBILE ===== */
+/* ===== BASE : MOBILE ===== */
 
 .admin-titulo {
     color: #c1121f;
@@ -111,4 +111,57 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+
+.modal-acciones {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.modal-acciones > .btn-secundario,
+.modal-acciones > .btn-primary {
+  flex: 1 1 0;
+  width: 50%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 1rem;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+  box-sizing: border-box;
+  text-align: center;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+
+.modal-acciones > .btn-secundario {
+  background-color: transparent;
+  color: #fff;
+  border-color: #555;
+}
+
+.modal-acciones > .btn-secundario:hover {
+  border-color: #777;
+}
+
+
+.modal-acciones > .btn-primary.btn-eliminar {
+  background-color: #d32f2f;
+  color: #fff;
+  border-color: #d32f2f;
+}
+
+.modal-acciones > .btn-primary.btn-eliminar:hover {
+  background-color: #b71c1c;
+  border-color: #b71c1c;
 }

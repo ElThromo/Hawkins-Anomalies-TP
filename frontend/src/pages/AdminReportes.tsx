@@ -38,6 +38,10 @@ function AdminReportes() {
   const [error, setError] = useState("");
   const [reporteEditando, setReporteEditando] = useState<Reporte | null>(null);
 
+
+  const [reporteAEliminar, setReporteAEliminar] = useState<Reporte | null>(null);
+  const [errorEliminacion, setErrorEliminacion] = useState("");
+
   async function cargarReportes() {
     setCargando(true);
     try {
@@ -117,30 +121,35 @@ function AdminReportes() {
     }
   }
 
-  async function handleEliminar(reporte: Reporte) {
-    const confirmar = window.confirm(`¿Eliminar el reporte "${reporte.titulo}"? Esta acción no se puede deshacer.`);
-    if (!confirmar) return;
+  function handleIniciarEliminacion(reporte: Reporte) {
+    setErrorEliminacion("");
+    setReporteAEliminar(reporte);
+  }
+
+  async function confirmarYEjecutarEliminacion() {
+    if (!reporteAEliminar) return;
+    setErrorEliminacion("");
 
     try {
-      const respuesta = await fetch(`http://localhost:3000/reportes/${reporte.idReporte}`, {
+      const respuesta = await fetch(`http://localhost:3000/reportes/${reporteAEliminar.idReporte}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (!respuesta.ok) {
-        const datos = await respuesta.json();
-        alert(datos.error || "Error al eliminar el reporte");
+        const datos = await respuesta.json().catch(() => null);
+        setErrorEliminacion(datos?.error || "Error al eliminar el reporte");
         return;
       }
 
+      setReporteAEliminar(null);
       cargarReportes();
     } catch (err) {
       console.error(err);
-      alert("No se pudo conectar con el servidor");
+      setErrorEliminacion("No se pudo conectar con el servidor");
     }
   }
 
-  // Opciones únicas para los selects (derivadas de los reportes cargados)
   const zonasUnicas = Array.from(
     new Set(reportes.map((r) => r.zona.nombre))
   ).sort();
@@ -262,7 +271,7 @@ function AdminReportes() {
                     <button className="btn-action" onClick={() => setReporteEditando(reporte)}>
                       Editar estado
                     </button>
-                    <button className="btn-action btn-delete" onClick={() => handleEliminar(reporte)}>
+                    <button className="btn-action btn-delete" onClick={() => handleIniciarEliminacion(reporte)}>
                       Eliminar
                     </button>
                   </td>
@@ -283,6 +292,54 @@ function AdminReportes() {
           onCancelar={() => setReporteEditando(null)}
           onGuardar={handleGuardarEstado}
         />
+      )}
+
+      {reporteAEliminar && (
+        <div className="modal-overlay" onClick={() => setReporteAEliminar(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirmar Eliminación</h3>
+            <p className="modal-subtitulo" style={{ margin: "1rem 0" }}>
+              ¿Estás seguro de que deseas eliminar el reporte{" "}
+              <strong>{reporteAEliminar.titulo}</strong>? Esta acción no se puede
+              deshacer.
+            </p>
+
+            {errorEliminacion && (
+              <p
+                className="admin-mensaje admin-error"
+                style={{ marginBottom: "1rem", fontSize: "0.9rem" }}
+              >
+                {errorEliminacion}
+              </p>
+            )}
+
+            <div className="modal-acciones">
+              {errorEliminacion ? (
+                <button
+                  className="btn-secundario"
+                  onClick={() => setReporteAEliminar(null)}
+                >
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="btn-secundario"
+                    onClick={() => setReporteAEliminar(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-primary btn-eliminar"
+                    onClick={confirmarYEjecutarEliminacion}
+                  >
+                    Sí, eliminar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </Layout>
   );

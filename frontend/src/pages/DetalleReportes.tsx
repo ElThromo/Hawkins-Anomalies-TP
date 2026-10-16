@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import Layout from "../components/Layout/Layout";
 import { useAuth } from "../context/useAuth";
 import "../styles/DetalleReporte.css";
+import "../styles/AdminTable.css";
 
 interface Reporte {
   idReporte: number;
@@ -62,7 +63,7 @@ const ESTADO_LABELS: Record<string, string> = {
 function DetalleReporte() {
   const { id } = useParams();
   const { usuario, token } = useAuth();
-    const [avataresFallidos, setAvataresFallidos] = useState<string[]>([]);
+  const [avataresFallidos, setAvataresFallidos] = useState<string[]>([]);
   const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
   const [zoomImagen, setZoomImagen] = useState(1);
 
@@ -79,6 +80,18 @@ function DetalleReporte() {
   const [idResolucionEditando, setIdResolucionEditando] = useState<
     number | null
   >(null);
+
+ 
+  const [resolucionAEliminar, setResolucionAEliminar] =
+    useState<Resolucion | null>(null);
+  const [errorEliminacionResolucion, setErrorEliminacionResolucion] =
+    useState("");
+
+
+  const [comentarioAEliminar, setComentarioAEliminar] =
+    useState<Comentario | null>(null);
+  const [errorEliminacionComentario, setErrorEliminacionComentario] =
+    useState("");
 
   const puedeGestionarResoluciones =
     usuario?.rol === "ADMIN" || usuario?.rol === "INVESTIGADOR";
@@ -506,30 +519,32 @@ function DetalleReporte() {
     }
   }
 
-  async function eliminarResolucion(idResolucion: number) {
+ 
+  function handleIniciarEliminacionResolucion(resolucion: Resolucion) {
+    setErrorEliminacionResolucion("");
+    setResolucionAEliminar(resolucion);
+  }
+
+
+  async function confirmarYEjecutarEliminacionResolucion() {
+    if (!resolucionAEliminar) return;
+
     if (guardandoResolucion || cargandoResoluciones) return;
 
-    setErrorResoluciones("");
+    setErrorEliminacionResolucion("");
 
     if (!token || !puedeGestionarResoluciones) {
-      setErrorResoluciones(
+      setErrorEliminacionResolucion(
         "Solo administradores e investigadores pueden eliminar resoluciones."
       );
       return;
     }
 
-    const confirmar = window.confirm(
-      "¿Querés eliminar esta resolución? Esta acción no se puede deshacer. " +
-        "Si es la última y el reporte está Resuelto, volverá a En investigación."
-    );
-
-    if (!confirmar) return;
-
     setGuardandoResolucion(true);
 
     try {
       const respuesta = await fetch(
-        `http://localhost:3000/resoluciones/${idResolucion}`,
+        `http://localhost:3000/resoluciones/${resolucionAEliminar.idResolucion}`,
         {
           method: "DELETE",
           headers: {
@@ -541,7 +556,7 @@ function DetalleReporte() {
       const datos = await respuesta.json();
 
       if (!respuesta.ok) {
-        setErrorResoluciones(
+        setErrorEliminacionResolucion(
           datos.error || "No se pudo eliminar la resolución."
         );
         return;
@@ -567,9 +582,11 @@ function DetalleReporte() {
         setCuerpoResolucion("");
         setFormularioResolucionAbierto(false);
       }
+
+      setResolucionAEliminar(null);
     } catch (error) {
       console.error(error);
-      setErrorResoluciones("No se pudo conectar con el servidor.");
+      setErrorEliminacionResolucion("No se pudo conectar con el servidor.");
     } finally {
       setGuardandoResolucion(false);
     }
@@ -823,18 +840,21 @@ function DetalleReporte() {
     }
   }
 
-  async function eliminarComentario(idComentario: number) {
-    if (!token) return;
 
-    const confirmar = window.confirm(
-      "¿Seguro que querés eliminar este comentario? También se eliminarán todas sus respuestas."
-    );
+  function handleIniciarEliminacionComentario(comentario: Comentario) {
+    setErrorEliminacionComentario("");
+    setComentarioAEliminar(comentario);
+  }
 
-    if (!confirmar) return;
+  // Confirmar eliminación de comentario
+  async function confirmarYEjecutarEliminacionComentario() {
+    if (!comentarioAEliminar || !token) return;
+
+    setErrorEliminacionComentario("");
 
     try {
       const respuesta = await fetch(
-        `http://localhost:3000/comentarios/${idComentario}`,
+        `http://localhost:3000/comentarios/${comentarioAEliminar.idComentario}`,
         {
           method: "DELETE",
           headers: {
@@ -846,11 +866,13 @@ function DetalleReporte() {
       const datos = await respuesta.json();
 
       if (!respuesta.ok) {
-        setErrorComentarios(
+        setErrorEliminacionComentario(
           datos.error || "No se pudo eliminar el comentario"
         );
         return;
       }
+
+      const idComentario = comentarioAEliminar.idComentario;
 
       setComentarios((anteriores) => {
         const idsEliminados = new Set<number>([idComentario]);
@@ -882,9 +904,10 @@ function DetalleReporte() {
       setIdComentarioEditando(null);
       setTextoEditado("");
       setErrorComentarios("");
+      setComentarioAEliminar(null);
     } catch (err) {
       console.error(err);
-      setErrorComentarios("No se pudo conectar con el servidor");
+      setErrorEliminacionComentario("No se pudo conectar con el servidor");
     }
   }
 
@@ -899,7 +922,7 @@ function DetalleReporte() {
       );
     return (
       <article className="comentario-card" key={comentario.idComentario}>
-                <div className="comentario-avatar" aria-hidden="true">
+        <div className="comentario-avatar" aria-hidden="true">
           {comentario.usuario.avatar &&
           !avataresFallidos.includes(comentario.usuario.avatar) ? (
             <img
@@ -1037,7 +1060,7 @@ function DetalleReporte() {
                         e.currentTarget
                           .closest("details")
                           ?.removeAttribute("open");
-                        eliminarComentario(comentario.idComentario);
+                        handleIniciarEliminacionComentario(comentario);
                       }}
                     >
                       Eliminar
@@ -1437,7 +1460,7 @@ function DetalleReporte() {
                           className="resolucion-eliminar"
                           disabled={guardandoResolucion || cargandoResoluciones}
                           onClick={() =>
-                            eliminarResolucion(resolucion.idResolucion)
+                            handleIniciarEliminacionResolucion(resolucion)
                           }
                         >
                           Eliminar
@@ -1453,7 +1476,7 @@ function DetalleReporte() {
               ))
             ))}
 
-            {puedeGestionarResoluciones &&
+          {puedeGestionarResoluciones &&
             !cargandoResoluciones &&
             !errorResoluciones &&
             resoluciones.length === 0 &&
@@ -1471,7 +1494,6 @@ function DetalleReporte() {
                 Agregar resolución
               </button>
             )}
-
         </section>
 
         <section className="detalle-comentarios">
@@ -1571,6 +1593,110 @@ function DetalleReporte() {
             </div>
           </div>
         </dialog>
+      )}
+
+      {resolucionAEliminar && (
+        <div
+          className="modal-overlay"
+          onClick={() => setResolucionAEliminar(null)}
+        >
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirmar Eliminación</h3>
+            <p className="modal-subtitulo" style={{ margin: "1rem 0" }}>
+              ¿Querés eliminar la resolución{" "}
+              <strong>{resolucionAEliminar.resolucion}</strong>? Esta acción no
+              se puede deshacer. Si es la última y el reporte está Resuelto,
+              volverá a En investigación.
+            </p>
+
+            {errorEliminacionResolucion && (
+              <p
+                className="admin-mensaje admin-error"
+                style={{ marginBottom: "1rem", fontSize: "0.9rem" }}
+              >
+                {errorEliminacionResolucion}
+              </p>
+            )}
+
+            <div className="modal-acciones">
+              {errorEliminacionResolucion ? (
+                <button
+                  className="btn-secundario"
+                  onClick={() => setResolucionAEliminar(null)}
+                >
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="btn-secundario"
+                    onClick={() => setResolucionAEliminar(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-primary btn-eliminar"
+                    onClick={confirmarYEjecutarEliminacionResolucion}
+                    disabled={guardandoResolucion}
+                  >
+                    {guardandoResolucion ? "Eliminando..." : "Sí, eliminar"}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Eliminar Comentario */}
+      {comentarioAEliminar && (
+        <div
+          className="modal-overlay"
+          onClick={() => setComentarioAEliminar(null)}
+        >
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirmar Eliminación</h3>
+            <p className="modal-subtitulo" style={{ margin: "1rem 0" }}>
+              ¿Seguro que querés eliminar este comentario? También se
+              eliminarán todas sus respuestas.
+            </p>
+
+            {errorEliminacionComentario && (
+              <p
+                className="admin-mensaje admin-error"
+                style={{ marginBottom: "1rem", fontSize: "0.9rem" }}
+              >
+                {errorEliminacionComentario}
+              </p>
+            )}
+
+            <div className="modal-acciones">
+              {errorEliminacionComentario ? (
+                <button
+                  className="btn-secundario"
+                  onClick={() => setComentarioAEliminar(null)}
+                >
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="btn-secundario"
+                    onClick={() => setComentarioAEliminar(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-primary btn-eliminar"
+                    onClick={confirmarYEjecutarEliminacionComentario}
+                  >
+                    Sí, eliminar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </Layout>
   );

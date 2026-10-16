@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Layout from "../components/Layout/Layout";
 import { useAuth } from "../context/useAuth";
@@ -24,6 +23,9 @@ function AdminUsuarios() {
   const [error, setError] = useState("");
   const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
 
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
+  const [errorEliminacion, setErrorEliminacion] = useState("");
+
   async function cargarUsuarios() {
     setCargando(true);
     try {
@@ -32,14 +34,13 @@ function AdminUsuarios() {
       });
 
       if (!respuesta.ok) {
-  const datos = await respuesta.json().catch(() => null);
-
-  setError(
-    datos?.error ||
-    `No se pudieron cargar los usuarios. Código: ${respuesta.status}`
-  );
-  return;
-}
+        const datos = await respuesta.json().catch(() => null);
+        setError(
+          datos?.error ||
+          `No se pudieron cargar los usuarios. Código: ${respuesta.status}`
+        );
+        return;
+      }
 
       setUsuarios(await respuesta.json());
     } catch (err) {
@@ -64,7 +65,6 @@ function AdminUsuarios() {
 
         if (!respuesta.ok) {
           const datos = await respuesta.json().catch(() => null);
-
           setError(
             datos?.error ||
             `No se pudieron cargar los usuarios. Código: ${respuesta.status}`
@@ -117,26 +117,32 @@ function AdminUsuarios() {
     }
   }
 
-  async function handleEliminar(usuario: Usuario) {
-    const confirmar = window.confirm(`¿Eliminar al usuario "${usuario.nombre}"? Esta acción no se puede deshacer.`);
-    if (!confirmar) return;
+  function handleIniciarEliminacion(usuario: Usuario) {
+    setErrorEliminacion(""); // Limpiamos errores previos al abrir
+    setUsuarioAEliminar(usuario);
+  }
+
+  async function confirmarYEjecutarEliminacion() {
+    if (!usuarioAEliminar) return;
+    setErrorEliminacion("");
 
     try {
-      const respuesta = await fetch(`http://localhost:3000/usuarios/${usuario.idUsuario}`, {
+      const respuesta = await fetch(`http://localhost:3000/usuarios/${usuarioAEliminar.idUsuario}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (!respuesta.ok) {
-        const datos = await respuesta.json();
-        alert(datos.error || "Error al eliminar el usuario");
+        const datos = await respuesta.json().catch(() => null);
+        setErrorEliminacion(datos?.error || "Error al eliminar el usuario");
         return;
       }
 
+      setUsuarioAEliminar(null);
       cargarUsuarios();
     } catch (err) {
       console.error(err);
-      alert("No se pudo conectar con el servidor");
+      setErrorEliminacion("No se pudo conectar con el servidor");
     }
   }
 
@@ -221,7 +227,7 @@ function AdminUsuarios() {
                     <button className="btn-action" onClick={() => setUsuarioEditando(usuario)}>
                       Editar
                     </button>
-                    <button className="btn-action btn-delete" onClick={() => handleEliminar(usuario)}>
+                    <button className="btn-action btn-delete" onClick={() => handleIniciarEliminacion(usuario)}>
                       Eliminar
                     </button>
                   </td>
@@ -242,6 +248,49 @@ function AdminUsuarios() {
           onCancelar={() => setUsuarioEditando(null)}
           onGuardar={handleGuardarEdicion}
         />
+      )}
+
+      {usuarioAEliminar && (
+        <div className="modal-overlay" onClick={() => setUsuarioAEliminar(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirmar Eliminación</h3>
+            <p className="modal-subtitulo" style={{ margin: "1rem 0" }}>
+              ¿Estás seguro de que deseas eliminar al usuario <strong>{usuarioAEliminar.nombre}</strong>? Esta acción no se puede deshacer.
+            </p>
+
+            {errorEliminacion && (
+              <p className="admin-mensaje admin-error" style={{ marginBottom: "1rem", fontSize: "0.9rem" }}>
+                {errorEliminacion}
+              </p>
+            )}
+
+            <div className="modal-acciones">
+              {errorEliminacion ? (
+                <button
+                  className="btn-secundario"
+                  onClick={() => setUsuarioAEliminar(null)}
+                >
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="btn-secundario"
+                    onClick={() => setUsuarioAEliminar(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-primary btn-eliminar"
+                    onClick={confirmarYEjecutarEliminacion}
+                  >
+                    Sí, eliminar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </Layout>
   );

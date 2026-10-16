@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout/Layout";
+import "../styles/AdminTable.css";
 
 interface Categoria {
   idCategoria?: number;
@@ -18,16 +19,18 @@ export const Categorias = () => {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
 
-  // Función auxiliar para obtener los headers con el Token
+  const [categoriaAEliminar, setCategoriaAEliminar] = useState<Categoria | null>(null);
+  const [errorEliminacion, setErrorEliminacion] = useState("");
+
+
   const getAuthHeaders = () => {
-    const token = localStorage.getItem("token"); // Asegúrate de usar la clave con la que guardaste el token en tu login
+    const token = localStorage.getItem("token");
     return {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     };
   };
 
-  // 1. CARGAR CATEGORÍAS
   const cargarCategorias = async () => {
     try {
       const response = await fetch(API_URL, {
@@ -48,19 +51,17 @@ export const Categorias = () => {
     cargarCategorias();
   }, []);
 
-  // 2. CREAR O EDITAR CATEGORÍA
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (categoriaEditando && categoriaEditando.idCategoria) {
-        // ACTUALIZAR (PUT)
         await fetch(`${API_URL}/${categoriaEditando.idCategoria}`, {
           method: "PUT",
           headers: getAuthHeaders(),
           body: JSON.stringify({ nombre, descripcion }),
         });
       } else {
-        // CREAR (POST)
+
         await fetch(API_URL, {
           method: "POST",
           headers: getAuthHeaders(),
@@ -75,19 +76,32 @@ export const Categorias = () => {
     }
   };
 
-  // 3. ELIMINAR CATEGORÍA
-  const handleEliminar = async (id?: number) => {
-    if (!id) return;
-    if (window.confirm("¿Estás seguro de que deseas eliminar esta categoría?")) {
-      try {
-        await fetch(`${API_URL}/${id}`, {
-          method: "DELETE",
-          headers: getAuthHeaders(),
-        });
-        cargarCategorias();
-      } catch (error) {
-        console.error("Error al eliminar:", error);
+  const handleIniciarEliminacion = (categoria: Categoria) => {
+    setErrorEliminacion("");
+    setCategoriaAEliminar(categoria);
+  };
+
+  const confirmarYEjecutarEliminacion = async () => {
+    if (!categoriaAEliminar || !categoriaAEliminar.idCategoria) return;
+    setErrorEliminacion("");
+
+    try {
+      const response = await fetch(`${API_URL}/${categoriaAEliminar.idCategoria}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const datos = await response.json().catch(() => null);
+        setErrorEliminacion(datos?.error || "Error al eliminar la categoría");
+        return;
       }
+
+      setCategoriaAEliminar(null);
+      cargarCategorias();
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+      setErrorEliminacion("No se pudo conectar con el servidor");
     }
   };
 
@@ -152,7 +166,7 @@ export const Categorias = () => {
                     </button>
                     <button
                       className="btn-action btn-delete"
-                      onClick={() => handleEliminar(cat.idCategoria)}
+                      onClick={() => handleIniciarEliminacion(cat)}
                     >
                       Eliminar
                     </button>
@@ -171,34 +185,33 @@ export const Categorias = () => {
       </div>
 
       {modalAbierto && (
-        <div style={modalStyles.overlay}>
-          <div style={modalStyles.content}>
+        <div className="modal-overlay" onClick={() => setModalAbierto(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <h3>{categoriaEditando ? "Editar Categoría" : "Nueva Categoría"}</h3>
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ display: "block", marginBottom: "4px" }}>Nombre:</label>
+              <label>
+                Nombre
                 <input
                   type="text"
                   required
-                  style={{ width: "100%", padding: "8px" }}
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                 />
-              </div>
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", marginBottom: "4px" }}>Descripción:</label>
+              </label>
+              <label>
+                Descripción
                 <textarea
                   required
                   rows={3}
-                  style={{ width: "100%", padding: "8px" }}
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
                 />
-              </div>
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              </label>
+
+              <div className="modal-acciones">
                 <button
                   type="button"
-                  className="btn-action"
+                  className="btn-secundario"
                   onClick={() => setModalAbierto(false)}
                 >
                   Cancelar
@@ -211,30 +224,56 @@ export const Categorias = () => {
           </div>
         </div>
       )}
+
+      {categoriaAEliminar && (
+        <div className="modal-overlay" onClick={() => setCategoriaAEliminar(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirmar Eliminación</h3>
+            <p className="modal-subtitulo" style={{ margin: "1rem 0" }}>
+              ¿Estás seguro de que deseas eliminar la categoría{" "}
+              <strong>{categoriaAEliminar.nombre}</strong>? Esta acción no se puede
+              deshacer.
+            </p>
+
+            {errorEliminacion && (
+              <p
+                className="admin-mensaje admin-error"
+                style={{ marginBottom: "1rem", fontSize: "0.9rem" }}
+              >
+                {errorEliminacion}
+              </p>
+            )}
+
+            <div className="modal-acciones">
+              {errorEliminacion ? (
+                <button
+                  className="btn-secundario"
+                  onClick={() => setCategoriaAEliminar(null)}
+                >
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="btn-secundario"
+                    onClick={() => setCategoriaAEliminar(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-primary btn-eliminar"
+                    onClick={confirmarYEjecutarEliminacion}
+                  >
+                    Sí, eliminar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
-};
-
-const modalStyles = {
-  overlay: {
-    position: "fixed" as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-  },
-  content: {
-    background: "#1e1e2e",
-    padding: "24px",
-    borderRadius: "8px",
-    width: "400px",
-    color: "#fff",
-  },
 };
 
 export default Categorias;

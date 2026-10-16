@@ -17,6 +17,9 @@ function TiposReaccion() {
   const [error, setError] = useState("");
   const [tipoEditando, setTipoEditando] = useState<TipoReaccion | "nuevo" | null>(null);
 
+  const [tipoAEliminar, setTipoAEliminar] = useState<TipoReaccion | null>(null);
+  const [errorEliminacion, setErrorEliminacion] = useState("");
+
   async function cargarTipos() {
     setCargando(true);
     try {
@@ -93,27 +96,33 @@ function TiposReaccion() {
     }
   }
 
-  async function handleEliminar(tipo: TipoReaccion) {
-    const confirmar = window.confirm(`¿Eliminar el tipo "${tipo.nombre}"?`);
-    if (!confirmar) return;
+  function handleIniciarEliminacion(tipo: TipoReaccion) {
+    setErrorEliminacion("");
+    setTipoAEliminar(tipo);
+  }
+
+  async function confirmarYEjecutarEliminacion() {
+    if (!tipoAEliminar) return;
+    setErrorEliminacion("");
 
     try {
-      const respuesta = await fetch(`${API}/${tipo.idTipoReaccion}`, {
+      const respuesta = await fetch(`${API}/${tipoAEliminar.idTipoReaccion}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      const resultado = await respuesta.json();
+      const resultado = await respuesta.json().catch(() => null);
 
       if (!respuesta.ok) {
-        alert(resultado.error || "No se pudo eliminar el tipo");
+        setErrorEliminacion(resultado?.error || "No se pudo eliminar el tipo");
         return;
       }
 
+      setTipoAEliminar(null);
       cargarTipos();
     } catch (err) {
       console.error(err);
-      alert("No se pudo conectar con el servidor");
+      setErrorEliminacion("No se pudo conectar con el servidor");
     }
   }
 
@@ -177,7 +186,10 @@ function TiposReaccion() {
                     <button className="btn-action" onClick={() => setTipoEditando(tipo)}>
                       Editar
                     </button>
-                    <button className="btn-action btn-delete" onClick={() => handleEliminar(tipo)}>
+                    <button
+                      className="btn-action btn-delete"
+                      onClick={() => handleIniciarEliminacion(tipo)}
+                    >
                       Eliminar
                     </button>
                   </td>
@@ -198,6 +210,54 @@ function TiposReaccion() {
           onCancelar={() => setTipoEditando(null)}
           onGuardar={handleGuardar}
         />
+      )}
+
+      {tipoAEliminar && (
+        <div className="modal-overlay" onClick={() => setTipoAEliminar(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirmar Eliminación</h3>
+            <p className="modal-subtitulo" style={{ margin: "1rem 0" }}>
+              ¿Estás seguro de que deseas eliminar el tipo de reacción{" "}
+              <strong>{tipoAEliminar.nombre}</strong> {tipoAEliminar.emoji}? Esta
+              acción no se puede deshacer.
+            </p>
+
+            {errorEliminacion && (
+              <p
+                className="admin-mensaje admin-error"
+                style={{ marginBottom: "1rem", fontSize: "0.9rem" }}
+              >
+                {errorEliminacion}
+              </p>
+            )}
+
+            <div className="modal-acciones">
+              {errorEliminacion ? (
+                <button
+                  className="btn-secundario"
+                  onClick={() => setTipoAEliminar(null)}
+                >
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="btn-secundario"
+                    onClick={() => setTipoAEliminar(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-primary btn-eliminar"
+                    onClick={confirmarYEjecutarEliminacion}
+                  >
+                    Sí, eliminar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </Layout>
   );

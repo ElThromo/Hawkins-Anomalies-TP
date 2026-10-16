@@ -22,7 +22,6 @@ const NIVELES = [
   { nombre: "CRITICO", color: "#e84b5b" },
 ];
 
-// Orden de gravedad para poder ordenar correctamente (BAJO → CRITICO)
 const ORDEN_NIVEL: Record<string, number> = {
   BAJO: 1,
   MEDIO: 2,
@@ -44,6 +43,9 @@ function Zonas() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [zonaEditando, setZonaEditando] = useState<Zona | "nueva" | null>(null);
+
+  const [zonaAEliminar, setZonaAEliminar] = useState<Zona | null>(null);
+  const [errorEliminacion, setErrorEliminacion] = useState("");
 
   async function cargarZonas() {
     setCargando(true);
@@ -91,7 +93,14 @@ function Zonas() {
     };
   }, []);
 
-  async function handleGuardar(datos: { nombre: string; descripcion: string; nivelPeligro: string; posX: number; posY: number; radio: number }) {
+  async function handleGuardar(datos: {
+    nombre: string;
+    descripcion: string;
+    nivelPeligro: string;
+    posX: number;
+    posY: number;
+    radio: number;
+  }) {
     const esNueva = zonaEditando === "nueva";
     const url = esNueva
       ? "http://localhost:3000/zonas"
@@ -102,9 +111,9 @@ function Zonas() {
         method: esNueva ? "POST" : "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(datos)
+        body: JSON.stringify(datos),
       });
 
       if (!respuesta.ok) {
@@ -121,26 +130,32 @@ function Zonas() {
     }
   }
 
-  async function handleEliminar(zona: Zona) {
-    const confirmar = window.confirm(`¿Eliminar la zona "${zona.nombre}"? Esta acción no se puede deshacer.`);
-    if (!confirmar) return;
+  function handleIniciarEliminacion(zona: Zona) {
+    setErrorEliminacion("");
+    setZonaAEliminar(zona);
+  }
+
+  async function confirmarYEjecutarEliminacion() {
+    if (!zonaAEliminar) return;
+    setErrorEliminacion("");
 
     try {
-      const respuesta = await fetch(`http://localhost:3000/zonas/${zona.idZona}`, {
+      const respuesta = await fetch(`http://localhost:3000/zonas/${zonaAEliminar.idZona}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!respuesta.ok) {
-        const err = await respuesta.json();
-        alert(err.error || "Error al eliminar la zona");
+        const err = await respuesta.json().catch(() => null);
+        setErrorEliminacion(err?.error || "Error al eliminar la zona");
         return;
       }
 
+      setZonaAEliminar(null);
       cargarZonas();
     } catch (err) {
       console.error(err);
-      alert("No se pudo conectar con el servidor");
+      setErrorEliminacion("No se pudo conectar con el servidor");
     }
   }
 
@@ -217,17 +232,20 @@ function Zonas() {
               {zonasFiltradas.map((zona) => (
                 <tr key={zona.idZona}>
                   <td>{zona.idZona}</td>
-                <td>
-                 <span
-                   className="zona-link"
-                   onClick={() => navigate(`/zonas/${zona.idZona}`)}
-                 >
-                   {zona.nombre}
-                 </span>
-                </td>
+                  <td>
+                    <span
+                      className="zona-link"
+                      onClick={() => navigate(`/zonas/${zona.idZona}`)}
+                    >
+                      {zona.nombre}
+                    </span>
+                  </td>
                   <td>{zona.descripcion}</td>
                   <td>
-                    <span className="badge-nivel" style={{ color: colorDelNivel(zona.nivelPeligro) }}>
+                    <span
+                      className="badge-nivel"
+                      style={{ color: colorDelNivel(zona.nivelPeligro) }}
+                    >
                       ● {zona.nivelPeligro}
                     </span>
                   </td>
@@ -235,7 +253,10 @@ function Zonas() {
                     <button className="btn-action" onClick={() => setZonaEditando(zona)}>
                       Editar
                     </button>
-                    <button className="btn-action btn-delete" onClick={() => handleEliminar(zona)}>
+                    <button
+                      className="btn-action btn-delete"
+                      onClick={() => handleIniciarEliminacion(zona)}
+                    >
                       Eliminar
                     </button>
                   </td>
@@ -257,6 +278,54 @@ function Zonas() {
           onGuardar={handleGuardar}
         />
       )}
+
+      {zonaAEliminar && (
+        <div className="modal-overlay" onClick={() => setZonaAEliminar(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirmar Eliminación</h3>
+            <p className="modal-subtitulo" style={{ margin: "1rem 0" }}>
+              ¿Estás seguro de que deseas eliminar la zona{" "}
+              <strong>{zonaAEliminar.nombre}</strong>? Esta acción no se puede
+              deshacer.
+            </p>
+
+            {errorEliminacion && (
+              <p
+                className="admin-mensaje admin-error"
+                style={{ marginBottom: "1rem", fontSize: "0.9rem" }}
+              >
+                {errorEliminacion}
+              </p>
+            )}
+
+            <div className="modal-acciones">
+              {errorEliminacion ? (
+                <button
+                  className="btn-secundario"
+                  onClick={() => setZonaAEliminar(null)}
+                >
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="btn-secundario"
+                    onClick={() => setZonaAEliminar(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-primary btn-eliminar"
+                    onClick={confirmarYEjecutarEliminacion}
+                  >
+                    Sí, eliminar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
@@ -264,7 +333,14 @@ function Zonas() {
 interface ModalZonaProps {
   zona: Zona | null;
   onCancelar: () => void;
-  onGuardar: (datos: { nombre: string; descripcion: string; nivelPeligro: string; posX: number; posY: number; radio: number }) => void;
+  onGuardar: (datos: {
+    nombre: string;
+    descripcion: string;
+    nivelPeligro: string;
+    posX: number;
+    posY: number;
+    radio: number;
+  }) => void;
 }
 
 function ModalZona({ zona, onCancelar, onGuardar }: ModalZonaProps) {
@@ -338,8 +414,6 @@ function ModalZona({ zona, onCancelar, onGuardar }: ModalZonaProps) {
   );
 }
 
-/* preview del mapa al crear/editar zona*/
-
 const ANCHO_PREVIEW = 650;
 const ALTO_PREVIEW = Math.round((ALTO_IMAGEN / ANCHO_IMAGEN) * ANCHO_PREVIEW);
 const ESCALA = ANCHO_PREVIEW / ANCHO_IMAGEN;
@@ -368,7 +442,7 @@ function VistaPreviaMapa({ posX, posY, radio, nivelPeligro }: VistaPreviaMapaPro
           left: leftPx,
           top: topPx,
           backgroundColor: `${color}66`,
-          borderColor: color
+          borderColor: color,
         }}
       />
     </div>

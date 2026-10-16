@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout/Layout";
+import "../styles/AdminTable.css";
 
-// Tipos de datos
 interface Vigilante {
   idVigilante?: number;
   nombre: string;
@@ -18,7 +18,7 @@ export const Vigilantes = () => {
   const ZONAS_URL = "http://localhost:3000/zonas";
 
   const [vigilantes, setVigilantes] = useState<Vigilante[]>([]);
-  const [zonas, setZonas] = useState<Zona[]>([]); // <--- Zonas reales de la BD
+  const [zonas, setZonas] = useState<Zona[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [zonaFiltro, setZonaFiltro] = useState("");
 
@@ -28,6 +28,9 @@ export const Vigilantes = () => {
   const [nombre, setNombre] = useState("");
   const [idZona, setIdZona] = useState<number | string>("");
 
+  const [vigilanteAEliminar, setVigilanteAEliminar] = useState<Vigilante | null>(null);
+  const [errorEliminacion, setErrorEliminacion] = useState("");
+
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     return {
@@ -36,7 +39,6 @@ export const Vigilantes = () => {
     };
   };
 
-  // 1. CARGAR ZONAS DESDE LA BASE DE DATOS
   const cargarZonas = async () => {
     try {
       const response = await fetch(ZONAS_URL, {
@@ -53,7 +55,6 @@ export const Vigilantes = () => {
     }
   };
 
-  // 2. CARGAR VIGILANTES DESDE LA BASE DE DATOS
   const cargarVigilantes = async () => {
     try {
       const response = await fetch(API_URL, {
@@ -75,7 +76,6 @@ export const Vigilantes = () => {
     cargarVigilantes();
   }, []);
 
-  // 3. CREAR O EDITAR VIGILANTE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -105,19 +105,32 @@ export const Vigilantes = () => {
     }
   };
 
-  // 4. ELIMINAR VIGILANTE
-  const handleEliminar = async (id?: number) => {
-    if (!id) return;
-    if (window.confirm("¿Estás seguro de eliminar este vigilante?")) {
-      try {
-        await fetch(`${API_URL}/${id}`, {
-          method: "DELETE",
-          headers: getAuthHeaders(),
-        });
-        cargarVigilantes();
-      } catch (error) {
-        console.error("Error al eliminar:", error);
+  const handleIniciarEliminacion = (vigilante: Vigilante) => {
+    setErrorEliminacion("");
+    setVigilanteAEliminar(vigilante);
+  };
+
+  const confirmarYEjecutarEliminacion = async () => {
+    if (!vigilanteAEliminar || !vigilanteAEliminar.idVigilante) return;
+    setErrorEliminacion("");
+
+    try {
+      const response = await fetch(`${API_URL}/${vigilanteAEliminar.idVigilante}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const datos = await response.json().catch(() => null);
+        setErrorEliminacion(datos?.error || "Error al eliminar el vigilante");
+        return;
       }
+
+      setVigilanteAEliminar(null);
+      cargarVigilantes();
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+      setErrorEliminacion("No se pudo conectar con el servidor");
     }
   };
 
@@ -135,14 +148,12 @@ export const Vigilantes = () => {
     setModalAbierto(true);
   };
 
-  // Obtener el nombre de la zona a partir de su ID
   const obtenerNombreZona = (idZona?: number | string) => {
     if (!idZona) return "Sin asignar";
     const zonaEncontrada = zonas.find((z) => String(z.idZona) === String(idZona));
     return zonaEncontrada ? zonaEncontrada.nombre : `Zona ID ${idZona}`;
   };
 
-  // Filtrado de la tabla
   const vigilantesFiltrados = vigilantes.filter((v) => {
     const coincideTexto = (v.nombre || "").toLowerCase().includes(busqueda.toLowerCase());
     const coincideZona = zonaFiltro === "" || String(v.idZona) === zonaFiltro;
@@ -165,7 +176,6 @@ export const Vigilantes = () => {
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
-        {/* Filtro dinámico de Zonas */}
         <select value={zonaFiltro} onChange={(e) => setZonaFiltro(e.target.value)}>
           <option value="">Todas las zonas</option>
           {zonas.map((z) => (
@@ -199,7 +209,7 @@ export const Vigilantes = () => {
                     </button>
                     <button
                       className="btn-action btn-delete"
-                      onClick={() => handleEliminar(v.idVigilante)}
+                      onClick={() => handleIniciarEliminacion(v)}
                     >
                       Eliminar
                     </button>
@@ -217,28 +227,25 @@ export const Vigilantes = () => {
         </table>
       </div>
 
-      {/* Modal interactivo con opciones dinámicas de MySQL */}
       {modalAbierto && (
-        <div style={modalStyles.overlay}>
-          <div style={modalStyles.content}>
+        <div className="modal-overlay" onClick={() => setModalAbierto(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <h3>{vigilanteEditando ? "Editar Vigilante" : "Nuevo Vigilante"}</h3>
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ display: "block", marginBottom: "4px" }}>Nombre:</label>
+              <label>
+                Nombre
                 <input
                   type="text"
                   required
-                  style={{ width: "100%", padding: "8px" }}
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                 />
-              </div>
+              </label>
 
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", marginBottom: "4px" }}>Zona Asignada:</label>
+              <label>
+                Zona Asignada
                 <select
                   required
-                  style={{ width: "100%", padding: "8px" }}
                   value={String(idZona)}
                   onChange={(e) => setIdZona(e.target.value)}
                 >
@@ -249,12 +256,12 @@ export const Vigilantes = () => {
                     </option>
                   ))}
                 </select>
-              </div>
+              </label>
 
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              <div className="modal-acciones">
                 <button
                   type="button"
-                  className="btn-action"
+                  className="btn-secundario"
                   onClick={() => setModalAbierto(false)}
                 >
                   Cancelar
@@ -267,30 +274,56 @@ export const Vigilantes = () => {
           </div>
         </div>
       )}
+
+      {vigilanteAEliminar && (
+        <div className="modal-overlay" onClick={() => setVigilanteAEliminar(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirmar Eliminación</h3>
+            <p className="modal-subtitulo" style={{ margin: "1rem 0" }}>
+              ¿Estás seguro de que deseas eliminar al vigilante{" "}
+              <strong>{vigilanteAEliminar.nombre}</strong>? Esta acción no se puede
+              deshacer.
+            </p>
+
+            {errorEliminacion && (
+              <p
+                className="admin-mensaje admin-error"
+                style={{ marginBottom: "1rem", fontSize: "0.9rem" }}
+              >
+                {errorEliminacion}
+              </p>
+            )}
+
+            <div className="modal-acciones">
+              {errorEliminacion ? (
+                <button
+                  className="btn-secundario"
+                  onClick={() => setVigilanteAEliminar(null)}
+                >
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="btn-secundario"
+                    onClick={() => setVigilanteAEliminar(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-primary btn-eliminar"
+                    onClick={confirmarYEjecutarEliminacion}
+                  >
+                    Sí, eliminar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
-};
-
-const modalStyles = {
-  overlay: {
-    position: "fixed" as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-  },
-  content: {
-    background: "#1e1e2e",
-    padding: "24px",
-    borderRadius: "8px",
-    width: "380px",
-    color: "#fff",
-  },
 };
 
 export default Vigilantes;
