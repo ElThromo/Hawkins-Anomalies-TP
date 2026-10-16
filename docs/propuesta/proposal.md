@@ -16,7 +16,7 @@ Aplicación web que simula un sistema de reportes en el pueblo de Hawkins perten
 
 ### Modelo
 
-![Modelo de datos de Hawkins Anomalies](./docs/proposal/modelo-de-datos.png)
+![Modelo de datos de Hawkins Anomalies](./modelo-de-datos.png)
 
 Vista interactiva en https://drawsql.app/teams/elthromo/diagrams/hawkins-anomalies
 
