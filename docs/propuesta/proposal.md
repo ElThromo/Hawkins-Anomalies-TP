@@ -15,8 +15,10 @@
 Aplicación web que simula un sistema de reportes en el pueblo de Hawkins perteneciente al universo de Stranger Things, donde los habitantes pueden reportar eventos extraños y anomalias. Los reportes incluyen información relevante como descripción, categoría y ubicación, y pueden ser comentados por otros usuarios. Además, un grupo de investigadores pueden ir a la ubicacion del hecho para investigar y luego actualizar el estado de los reportes acompañados de una resolucion, de esta manera se facilita la comprensión colectiva de los fenómenos.
 
 ### Modelo
-<iframe width="100%" height="500px" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:15px; filter: invert(1)" allowtransparency="true" allowfullscreen="true" scrolling="no" title="Embedded DrawSQL IFrame" frameborder="0" src="https://drawsql.app/teams/elthromo/diagrams/hawkins-anomalies/embed"></iframe>
 
+![Modelo de datos de Hawkins Anomalies](./docs/proposal/modelo-de-datos.png)
+
+Vista interactiva en https://drawsql.app/teams/elthromo/diagrams/hawkins-anomalies
 
 ## Alcance Funcional 
 
