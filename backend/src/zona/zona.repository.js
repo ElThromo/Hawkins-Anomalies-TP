@@ -8,7 +8,8 @@ async function obtenerZonas() {
 // OBTENER UNA ZONA POR ID
 async function obtenerZonaPorId(id) {
     return await prisma.zona.findUnique({
-        where: { idZona: id }
+        where: { idZona: id },
+        include: { vigilantes: true }
     });
 }
 

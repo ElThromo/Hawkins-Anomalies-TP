@@ -11,6 +11,7 @@ type Zona = {
   posX: number | null;
   posY: number | null;
   radio: number | null;
+  vigilantes: { idVigilante: number; nombre: string }[];
 };
 
 type Reporte = {
@@ -174,6 +175,20 @@ function DetalleZona() {
         <div className="detalle-contenido-reporte">
           <p className="detalle-cuerpo">{zona.descripcion}</p>
         </div>
+
+        <section className="detalle-vigilantes">
+          <h2>Vigilante asignado</h2>
+
+          {zona.vigilantes.length === 0 ? (
+            <p className="detalle-mensaje">Esta zona no tiene un vigilante asignado.</p>
+          ) : (
+            <ul className="lista-vigilantes">
+              {zona.vigilantes.map((v) => (
+                <h3 key={v.idVigilante}> - {v.nombre}</h3>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <section className="detalle-resoluciones">
           <h2>Reportes de esta zona</h2>

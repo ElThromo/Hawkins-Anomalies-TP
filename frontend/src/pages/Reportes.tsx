@@ -208,7 +208,7 @@ function Reportes() {
     <Layout>
       <header className="feed-encabezado">
         <h1>Reportes</h1>
-        <p>Las últimas anomalías compartidas por la comunidad.</p>
+        <h2>Las últimas anomalías compartidas por la comunidad.</h2>
       </header>
 
       <section className="feed-lista" aria-label="Publicaciones de reportes">

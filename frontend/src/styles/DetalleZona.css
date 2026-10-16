@@ -221,6 +221,19 @@
   text-align: center;
 }
 
+.lista-vigilantes {
+    list-style: none;
+    padding: 0;
+    color: white;
+}
+
+.detalle-vigilantes h3{
+    color: white;
+    font-family: "Elms Sans", sans-serif;
+    font-size: 1.3rem;
+    margin-top: 5px;
+}
+
 /* desktop */
 
 @media (min-width: 768px) {
