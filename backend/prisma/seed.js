@@ -33,7 +33,7 @@ function copiarImagen(carpetaOrigen, archivo, carpetaDestino) {
     return null;
   }
 
-  const nombreFinal = `seed-${archivo}`; // prefijo para no chocar con las subidas reales
+  const nombreFinal = `seed-${archivo}`;
   const dirDestino = path.join(CARPETA_UPLOADS, carpetaDestino);
 
   fs.mkdirSync(dirDestino, { recursive: true });
